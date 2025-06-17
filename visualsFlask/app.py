@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # --- Data Loading and Processing ---
 
-def load_grn_data(filepath='grn.json'):
+def load_grn_data(filepath):
     """Loads the Gene Regulatory Network data from a JSON file."""
     # filepath=os.environ["GRN_PATH"]
     try:
@@ -86,7 +86,7 @@ def create_tf_interaction_network(tf_targets, threshold=1):
 def index():
     """Serves the main HTML page with tabs."""
     
-    grn_data = load_grn_data("grn.json") 
+    grn_data = load_grn_data("../data/grn.json") 
     if grn_data is None:
         return jsonify({"error": "Failed to load GRN data."}), 500
 
@@ -104,7 +104,7 @@ def index():
 def get_tf_network_data():
     """API endpoint for the TF co-regulation network."""
 
-    grn_data = load_grn_data("grn.json") 
+    grn_data = load_grn_data("../data/grn.json") 
     if grn_data is None:
         return jsonify({"error": "Failed to load GRN data."}), 500
 
@@ -129,7 +129,7 @@ def get_tf_network_data():
 
 @app.route('/api/full_network')
 def get_full_network_data():
-    grn_data = load_grn_data()
+    grn_data = load_grn_data("../data/grn.json")
     if grn_data is None:
         return jsonify({"error": "Failed to load GRN data."}), 500
 
