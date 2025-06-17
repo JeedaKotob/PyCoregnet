@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Network Visualization</title>
+    <script src="{{ url_for('static', filename='js_files/cytoscape.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js_files/popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js_files/cytoscape-popper.js') }}"></script>
+    <script src="{{ url_for('static', filename='js_files/cytoscape-fcose.js') }}"></script>
+    <script src="{{ url_for('static', filename='js_files/layout-base.js') }}"></script>
+    <script src="{{ url_for('static', filename='js_files/cose-base.js') }}"></script>
+    <script src="{{ url_for('static', filename='js_files/cytoscape-fcose.min.js') }}"></script>
+    
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+        h1 { text-align: center; margin: 15px 0; }
+
+        /* Tab Structure */
+        .tab-container { overflow: hidden; border-bottom: 1px solid #ccc; background-color: #f1f1f1; width: 100%; }
+        .tab-container button {
+            background-color: inherit; float: left; border: none; outline: none;
+            cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 17px;
+        }
+        .tab-container button:hover { background-color: #ddd; }
+        .tab-container button.active { background-color: #ccc; }
+
+        .tab-content {
+            display: none; /* Hidden by default */
+            padding: 15px;
+            border-top: none;
+            /* Flex layout for content within tab */
+            display: flex;
+            flex-grow: 1; /* Allow content to fill space */
+            height: calc(100vh - 100px); /* Adjust based on header/tab height */
+            gap: 20px; /* Space between controls and graph */
+        }
+
+        /* Controls Styling (Common) */
+        .controls {
+            padding: 15px; border: 1px solid #ddd; border-radius: 5px;
+            background-color: #f9f9f9;
+            width: 250px; /* Fixed width */
+            flex-shrink: 0; /* Don't shrink */
+            overflow-y: auto; /* Allow scrolling if controls overflow */
+            height: 95%; /* Fit within tab content height */
+            box-sizing: border-box;
+        }
+        .controls label, .controls select, .controls input, .controls button {
+             display: block; margin-bottom: 10px;
+             width: calc(100% - 16px); box-sizing: border-box;
+        }
+        .controls select, .controls input, .controls button { padding: 8px;}
+        .controls h3 { margin-top: 0; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        .controls p { font-size: 0.9em; color: #555; margin-top: 15px;}
+
+        /* Cytoscape Containers (Common) */
+        .cy-container {
+            flex-grow: 1; /* Take remaining space */
+            height: 95%; /* Fit within tab content height */
+            border: 1px solid #ccc;
+            background-color: #fdfdfd;
+            position: relative; /* Needed for absolute positioning of status */
+        }
+        .loading-status, .error-status {
+            position: absolute; bottom: 10px; left: 10px; background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px; border-radius: 3px; font-style: italic; color: #555; z-index: 100;
+        }
+        .error-status { color: red; font-weight: bold; }
+
+         /* Tooltip style */
+         .cy-popper-content {
+            background: rgba(255, 255, 255, 0.95); border: 1px solid #ccc; padding: 8px;
+            border-radius: 4px; font-size: 0.9em; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            pointer-events: none; max-width: 300px; word-wrap: break-word;
+         }
+    </style>
+</head>
+<body>
+    <h1>Gene Network Visualization</h1>
+
+    <div class="tab-container">
+        <button class="tab-button active" onclick="openTab(event, 'tfNetworkTab')">TF Co-Regulation</button>
+        <button class="tab-button" onclick="openTab(event, 'bipartiteNetworkTab')">Full Network (Bipartite)</button>
+    </div>
+
+    <!-- Tab Content: TF Co-Regulation Network -->
+    <div id="tfNetworkTab" class="tab-content" style="display: flex;">
+        <div class="controls">
+            <h3>TF Network Controls</h3>
+            <label for="thresholdInput">Min Shared Targets:</label>
+            <input type="number" id="thresholdInput" value="{{thresh}}" min="0">
+            <label for="tfSelectorTf">Highlight TF:</label>
+            <select id="tfSelectorTf">
+                <option value="">-- Select TF --</option>
+            </select>
+            <button id="updateButtonTf">Update Graph</button>
+
+            <!-- NEW: INFO -->
+            <div id="tfInfoPanel" style="font-size: 0.9em; color: #333; margin-top: 10px;"></div>
+
+
+            <p>Node size ~ total targets. Links show TFs sharing ≥ threshold targets. Click node or use dropdown to highlight co-regulators. Click background to reset.</p>
+        </div>
+        <div id="cyTf" class="cy-container">
+             <div id="loadingStatusTf" class="loading-status" style="display: none;"></div>
+             <div id="errorStatusTf" class="error-status" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Tab Content: Full Bipartite Network -->
+    <div id="bipartiteNetworkTab" class="tab-content">
+         <div class="controls">
+             <h3>Full Network Controls</h3>
+             <label for="nodeSelectorBipartite">Highlight Node:</label>
+             <select id="nodeSelectorBipartite">
+                 <option value="">-- Select Node --</option>
+             </select>
+
+             <!-- NEW: INFO -->
+             <div id="bipartiteInfoPanel" style="font-size: 0.9em; color: #333; margin-top: 10px;"></div>
+
+
+              <!-- <p>Shows TFs (blue) regulating Target Genes (green). Click node or use dropdown to highlight interactions. Click background to reset.</p> -->
+              <p>Shows TFs (blue) regulating Target Genes (yellow). Click node or use dropdown to highlight interactions. Click background to reset.</p>
+         </div>
+         <div id="cyBipartite" class="cy-container">
+             <div id="loadingStatusBipartite" class="loading-status" style="display: none;"></div>
+             <div id="errorStatusBipartite" class="error-status" style="display: none;"></div>
+         </div>
+    </div>
+
+    <script>
+        // --- Global Variables ---
+        let cyTf = null; // Cytoscape instance for TF Network
+        let cyBipartite = null; // Cytoscape instance for Bipartite Network
+        let currentTfNodes = []; // Nodes for TF network dropdown
+        let currentBipartiteNodes = []; // Nodes for Bipartite dropdown
+
+        // --- Utility Functions ---
+        function setStatus(tabId, type, message) {
+             const loadingEl = document.getElementById(`loadingStatus${tabId}`);
+             const errorEl = document.getElementById(`errorStatus${tabId}`);
+             if (!loadingEl || !errorEl) return;
+
+             loadingEl.style.display = 'none';
+             errorEl.style.display = 'none';
+
+             if (type === 'loading') {
+                 loadingEl.textContent = message;
+                 loadingEl.style.display = 'block';
+             } else if (type === 'error') {
+                 errorEl.textContent = `Error: ${message}`;
+                 errorEl.style.display = 'block';
+             } else if (type === 'info') {
+                 loadingEl.textContent = message; // Use loading element for info
+                 loadingEl.style.display = 'block';
+             }
+         }
+
+        function destroyPopper(ele) {
+            const popperInstance = ele.scratch('_popper');
+            if (popperInstance) {
+                popperInstance.destroy();
+                ele.scratch('_popper', null);
+            }
+        }
+
+        // --- Tab Switching Logic ---
+        function openTab(event, tabId) {
+            // Get all elements with class="tab-content" and hide them
+            const tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tab-button" and remove the class "active"
+            const tablinks = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            const currentTabContent = document.getElementById(tabId);
+            currentTabContent.style.display = "flex"; // Use flex to show
+            event.currentTarget.className += " active";
+
+            // Initialize or redraw graph for the opened tab
+            if (tabId === 'tfNetworkTab') {
+                // If cyTf doesn't exist or container is empty, fetch data
+                if (!cyTf || document.getElementById('cyTf').childElementCount === 0) {
+                     console.log("Initializing TF Network graph...");
+                     fetchAndDrawGraphTf();
+                } else {
+                     console.log("TF Network graph already initialized. Fitting view.");
+                     cyTf.resize(); // Ensure size is correct
+                     cyTf.fit(undefined, 30); // Refit view
+                }
+            } else if (tabId === 'bipartiteNetworkTab') {
+                 if (!cyBipartite || document.getElementById('cyBipartite').childElementCount === 0) {
+                     console.log("Initializing Bipartite Network graph...");
+                     fetchAndDrawGraphBipartite();
+                 } else {
+                     console.log("Bipartite Network graph already initialized. Fitting view.");
+                      cyBipartite.resize();
+                      cyBipartite.fit(undefined, 30);
+                 }
+            }
+        }
+
+        // --- TF Co-Regulation Network Logic ---
+        function clearHighlightingTf() {
+            if (cyTf) {
+                cyTf.elements().forEach(destroyPopper);
+                cyTf.elements().removeClass('highlighted highlighted-edge faded');
+            }
+            const selector = document.getElementById('tfSelectorTf');
+            if (selector) selector.value = "";
+
+            //  <!-- NEW: INFO -->
+            const infoDiv = document.getElementById('tfInfoPanel');
+            if (infoDiv) infoDiv.innerHTML = "";
+        }
+
+        function highlightNodeAndNeighborsTf(node) {
+             if (!cyTf || !node || node.length === 0 || !node.inside()) { clearHighlightingTf(); return; }
+             clearHighlightingTf();
+             const neighborhood = node.union(node.neighborhood());
+             cyTf.elements().difference(neighborhood).addClass('faded'); // Fade others first
+             neighborhood.nodes().addClass('highlighted'); // Then highlight
+             neighborhood.edges().addClass('highlighted-edge'); // Then highlight edges
+             const selector = document.getElementById('tfSelectorTf');
+             if (selector) selector.value = node.id();
+
+            //  <!-- NEW: INFO -->
+            const infoDiv = document.getElementById('tfInfoPanel');
+            if (infoDiv) {
+                const tfName = node.id();
+                const targetCount = node.data('target_count') || 0;
+
+                // Get connected edges and extract shared info
+                const neighbors = node.connectedEdges().map(edge => {
+                    const other = edge.source().id() === tfName ? edge.target().id() : edge.source().id();
+                    const sharedCount = edge.data('shared_count') || 0;
+                    return `${other} (${sharedCount} shared targets)`;
+                });
+
+                const coRegsList = neighbors.length ? neighbors.join('<br>') : 'None';
+
+                infoDiv.innerHTML = `
+                    <strong>${tfName}</strong><br>
+                    Total Targets: ${targetCount}<br>
+                    Co-regulators:<br>${coRegsList}
+                `;
+            }
+
+
+
+        }
+
+        function setupTooltipsTf(cyInstance) {
+            if (!cyInstance) return;
+            cyInstance.off('mouseover mouseout remove style'); // Clear previous
+
+            function nodeMouseoverHandler(event) { /* ... similar to previous node tooltip ... */
+                 const node = event.target; if (node.hasClass('faded')) return; destroyPopper(node);
+                 const popperInstance = node.popper({ content: () => { /* ... */
+                     let div = document.createElement('div'); div.classList.add('cy-popper-content');
+                     div.innerHTML = `<strong>${node.id()}</strong><br>Total Targets: ${node.data('target_count') || 0}`; return div;
+                 }, popper: { placement: 'top', strategy: 'absolute', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] } });
+                 node.scratch('_popper', popperInstance);
+             }
+            function edgeMouseoverHandler(event) { /* ... similar to previous edge tooltip ... */
+                 const edge = event.target; if (edge.hasClass('faded')) return; destroyPopper(edge);
+                 const sharedTargets = edge.data('shared_targets') || []; const source = edge.source().id(); const target = edge.target().id();
+                 const popperInstance = edge.popper({ content: () => { /* ... */
+                     let div = document.createElement('div'); div.classList.add('cy-popper-content');
+                     div.innerHTML = `<strong>${source} ↔ ${target}</strong><br>Shared: ${edge.data('shared_count')}<br>Targets: ${sharedTargets.length > 10 ? sharedTargets.slice(0,10).join(', ') + '...' : sharedTargets.join(', ') || 'None'}`; return div;
+                 }, popper: { placement: 'top', strategy: 'absolute', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] } });
+                 edge.scratch('_popper', popperInstance);
+            }
+            function genericMouseoutHandler(event) { destroyPopper(event.target); }
+            function destroyPopperOnEvent(event) { destroyPopper(event.target); }
+
+            cyInstance.on('mouseover', 'node', nodeMouseoverHandler);
+            cyInstance.on('mouseover', 'edge', edgeMouseoverHandler);
+            cyInstance.on('mouseout', 'node, edge', genericMouseoutHandler);
+            cyInstance.on('remove style', 'node, edge', destroyPopperOnEvent);
+        }
+
+        function populateSelectorTf(nodes) {
+            const selector = document.getElementById('tfSelectorTf');
+            selector.innerHTML = '<option value="">-- Select TF --</option>';
+            const sortedNodes = [...nodes].sort((a, b) => a.data.id.localeCompare(b.data.id));
+            sortedNodes.forEach(node => {
+                const option = document.createElement('option'); option.value = node.data.id; option.textContent = node.data.id; selector.appendChild(option);
+            });
+        }
+
+        function drawGraphTf(elements) {
+            currentTfNodes = elements.nodes || [];
+            const container = document.getElementById('cyTf');
+            if (!container) return;
+
+            if (cyTf) { clearHighlightingTf(); cyTf.destroy(); cyTf = null;}
+
+            cyTf = cytoscape({
+                container: container, elements: elements,
+                style: [
+                     { // Base node style for TF graph
+                         selector: 'node',
+                         style: {
+                             'shape': 'ellipse',
+                             'background-color': '#66a3ff',
+                             'border-color': '#555',
+                             'border-width': 1,
+                             // --- ADD THESE LINES BACK ---
+                             'label': 'data(id)', // Display the node ID (gene name)
+                             'text-valign': 'center',
+                             'color': 'white', // Label color
+                             'text-outline-width': 2,
+                             'text-outline-color': '#333', // Label outline for contrast
+                             // --- END OF ADDED LINES ---
+                            //  'width': 'mapData(target_count, 0, 10, 20, 60)', // Size based on target count
+                            //  'height': 'mapData(target_count, 0, 10, 20, 60)',
+                             'width': 'mapData(target_count, 0, 10, 10, 40)', // Size based on target count
+                             'height': 'mapData(target_count, 0, 10, 10, 40)',
+                             'font-size': 'mapData(target_count, 0, 10, 3, 8)',
+                             'opacity': 1,
+                             'transition-property': 'opacity, background-color, border-color, border-width',
+                             'transition-duration': '0.2s'
+                         }
+                     },
+                     { selector: 'edge', style: { /* ... base edge style ... */ 'line-color': '#ccc', 'width': 2, 'opacity': 1, 'label': 'data(shared_count)', 'font-size': '10px', 'color': '#333', 'text-background-opacity': 1, 'text-background-color': '#f0f0f0', 'text-background-padding': '2px', 'transition-property': 'opacity, line-color, width', 'transition-duration': '0.2s' } },
+                     { selector: '.highlighted', style: { 'background-color': '#ff8c00', 'border-color': '#e67300', 'border-width': 3, 'opacity': 1, 'z-index': 10 } },
+                     { selector: '.highlighted-edge', style: { 'line-color': '#ff8c00', 'width': 4, 'opacity': 1, 'z-index': 9 } },
+                     { selector: '.faded', style: { 'opacity': 0.15, 'background-color': '#e0e0e0', 'border-color': '#c0c0c0', 'line-color': '#d0d0d0', 'text-outline-color': '#d0d0d0', 'color': '#999' } } // Ensure faded label color is set too
+                ],
+                // layout: { name: 'cose', fit: true, padding: 40, animate: false /* ... other options ... */ }
+                layout: {
+                    name: 'fcose',
+                    quality: 'default',
+                    fit: true,
+                    padding: 40,
+                    animate: false,
+                    nodeRepulsion: 1000000,
+                    edgeElasticity: 100,
+                    gravity: 50,
+                    numIter: 1000
+                }
+
+
+            });
+
+            cyTf.on('tap', 'node', event => highlightNodeAndNeighborsTf(event.target));
+            cyTf.on('tap', event => { if (event.target === cyTf) clearHighlightingTf(); });
+
+            setupTooltipsTf(cyTf);
+            populateSelectorTf(currentTfNodes);
+            cyTf.ready(() => cyTf.fit(undefined, 30));
+            setStatus('Tf', 'info', `Graph updated`);
+        }
+
+        async function fetchAndDrawGraphTf() {
+            const threshold = parseInt(document.getElementById('thresholdInput').value, 10) || 1;
+             setStatus('Tf', 'loading', 'Loading TF network...');
+
+            try {
+                const response = await fetch(`/api/tf_network?threshold=${threshold}`);
+                const responseClone = response.clone(); // Clone for potential error parsing
+                if (!response.ok) {
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { errorMsg = (await responseClone.json()).error || errorMsg; }
+                    catch (e) { errorMsg = await responseClone.text() || errorMsg; }
+                    throw new Error(errorMsg);
+                }
+                const networkData = await response.json();
+                 if (!networkData || typeof networkData !== 'object' || (!Array.isArray(networkData.nodes) && !Array.isArray(networkData.edges)) ) {
+                    throw new Error("Received invalid network data structure.");
+                 }
+                 drawGraphTf({ nodes: networkData.nodes || [], edges: networkData.edges || [] });
+
+            } catch (error) {
+                console.error('Error fetching/drawing TF graph:', error);
+                setStatus('Tf', 'error', error.message);
+                if (cyTf) { cyTf.destroy(); cyTf = null; } // Cleanup on error
+                document.getElementById('cyTf').innerHTML = ''; // Clear container
+                populateSelectorTf([]);
+            }
+        }
+
+        // --- Bipartite Network Logic ---
+
+        function clearHighlightingBipartite() {
+            if (cyBipartite) {
+                cyBipartite.elements().forEach(destroyPopper);
+                cyBipartite.elements().removeClass('highlighted highlighted-edge faded');
+            }
+            const selector = document.getElementById('nodeSelectorBipartite');
+            if (selector) selector.value = "";
+
+            // NEW INFO
+            const infoDiv = document.getElementById('bipartiteInfoPanel');
+            if (infoDiv) infoDiv.innerHTML = "";
+
+        }
+
+        function highlightNodeAndNeighborsBipartite(node) {
+            if (!cyBipartite || !node || node.length === 0 || !node.inside()) { clearHighlightingBipartite(); return; }
+            clearHighlightingBipartite();
+            const neighborhood = node.union(node.neighborhood()); // Direct neighbors are TFs/Targets
+            cyBipartite.elements().difference(neighborhood).addClass('faded'); // Fade others
+            neighborhood.nodes().addClass('highlighted'); // Highlight node and direct neighbors
+            neighborhood.edges().addClass('highlighted-edge'); // Highlight connecting edges
+            const selector = document.getElementById('nodeSelectorBipartite');
+            if (selector) selector.value = node.id();
+
+            //  <!-- NEW: INFO -->
+            const infoDiv = document.getElementById('bipartiteInfoPanel');
+            if (infoDiv) {
+                const type = node.data('type') === 'tf' ? 'Transcription Factor' : 'Target Gene';
+                const neighbors = node.connectedEdges().map(e => {
+                    const other = e.source().id() === node.id() ? e.target().id() : e.source().id();
+                    const intType = e.data('interaction_type') || 'Interaction';
+                    return `${intType} → ${other}`;
+                });
+                infoDiv.innerHTML = `<strong>${node.id()}</strong><br>Type: ${type}<br>Connections:<br>${neighbors.join('<br>')}`;
+            }
+        }
+
+         function setupTooltipsBipartite(cyInstance) {
+             if (!cyInstance) return;
+             cyInstance.off('mouseover mouseout remove style'); // Clear previous
+
+            function nodeMouseoverHandler(event) {
+                 const node = event.target; if (node.hasClass('faded')) return; destroyPopper(node);
+                 const nodeType = node.data('type') === 'tf' ? 'Transcription Factor' : 'Target Gene';
+                 const popperInstance = node.popper({ content: () => {
+                     let div = document.createElement('div'); div.classList.add('cy-popper-content');
+                     div.innerHTML = `<strong>${node.id()}</strong><br>Type: ${nodeType}`; return div;
+                 }, popper: { placement: 'top', strategy: 'absolute', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] } });
+                 node.scratch('_popper', popperInstance);
+            }
+            function edgeMouseoverHandler(event) {
+                 const edge = event.target; if (edge.hasClass('faded')) return; destroyPopper(edge);
+                 const intType = edge.data('interaction_type') || 'Unknown';
+                 const source = edge.source().id(); const target = edge.target().id();
+                 const popperInstance = edge.popper({ content: () => {
+                     let div = document.createElement('div'); div.classList.add('cy-popper-content');
+                     div.innerHTML = `<strong>${source} → ${target}</strong><br>Type: ${intType}`; return div;
+                 }, popper: { placement: 'top', strategy: 'absolute', modifiers: [{ name: 'offset', options: { offset: [0, 8] } }] } });
+                 edge.scratch('_popper', popperInstance);
+            }
+             function genericMouseoutHandler(event) { destroyPopper(event.target); }
+             function destroyPopperOnEvent(event) { destroyPopper(event.target); }
+
+            cyInstance.on('mouseover', 'node', nodeMouseoverHandler);
+            cyInstance.on('mouseover', 'edge', edgeMouseoverHandler);
+            cyInstance.on('mouseout', 'node, edge', genericMouseoutHandler);
+            cyInstance.on('remove style', 'node, edge', destroyPopperOnEvent);
+        }
+
+        function populateSelectorBipartite(nodes) {
+            const selector = document.getElementById('nodeSelectorBipartite');
+            selector.innerHTML = '<option value="">-- Select Node --</option>';
+            // Separate TFs and Targets for potentially grouped dropdown (optional)
+            const tfs = nodes.filter(n => n.data.type === 'tf').sort((a, b) => a.data.id.localeCompare(b.data.id));
+            const targets = nodes.filter(n => n.data.type === 'target').sort((a, b) => a.data.id.localeCompare(b.data.id));
+
+            // Add TFs
+            const tfGroup = document.createElement('optgroup');
+            tfGroup.label = 'Transcription Factors';
+            tfs.forEach(node => {
+                const option = document.createElement('option'); option.value = node.data.id; option.textContent = node.data.id; tfGroup.appendChild(option);
+            });
+            selector.appendChild(tfGroup);
+
+             // Add Targets
+            const targetGroup = document.createElement('optgroup');
+            targetGroup.label = 'Target Genes';
+            targets.forEach(node => {
+                const option = document.createElement('option'); option.value = node.data.id; option.textContent = node.data.id; targetGroup.appendChild(option);
+            });
+            selector.appendChild(targetGroup);
+        }
+
+
+        function drawGraphBipartite(elements) {
+             currentBipartiteNodes = elements.nodes || [];
+             const container = document.getElementById('cyBipartite');
+             if (!container) return;
+
+             if (cyBipartite) { clearHighlightingBipartite(); cyBipartite.destroy(); cyBipartite = null;}
+
+             cyBipartite = cytoscape({
+                 container: container,
+                 elements: elements, // Includes nodes with positions
+                 style: [
+                     { // Base node style (common)
+                         selector: 'node',
+                         style: { 'label': 'data(id)', 'text-valign': 'center', 'text-halign': 'center', 'opacity': 1,
+                                  'width': 60, 'height': 60, // Fixed size for bipartite might be clearer
+                                  'border-width': 2, 'border-color': '#555',
+                                  'transition-property': 'opacity, background-color, border-color', 'transition-duration': '0.2s' }
+                     },
+                     { // TF node style
+                         selector: 'node[type="tf"]',
+                         style: { 'background-color': '#66a3ff', 'shape': 'ellipse', 'color': 'white', 'text-outline-color': '#333', 'text-outline-width': 2 }
+                     },
+                     { // Target node style
+                         selector: 'node[type="target"]',
+                        //  style: { 'background-color': '#50c878', 'shape': 'rectangle', 'color': 'black' } // Green, rectangle
+                         style: { 'background-color': '#c2b62f', 'shape': 'rectangle', 'color': 'black' }
+                     },
+                     { // Base edge style
+                         selector: 'edge',
+                         style: { 'width': 1.5, 'line-color': '#ccc', 'opacity': 1,
+                                  'target-arrow-shape': 'triangle', 'target-arrow-color': '#ccc',
+                                  'curve-style': 'bezier', // Or 'straight'
+                                  'transition-property': 'opacity, line-color, width', 'transition-duration': '0.2s' }
+                     },
+                      { // Activation edge style (example)
+                         selector: 'edge[interaction_type="Activation"]',
+                        //  style: { 'line-color': '#00cc00', 'target-arrow-color': '#00cc00' }
+                         style: { 'line-color': '#00b200', 'target-arrow-color': '#00b200' }
+                     },
+                      { // Repression edge style (example)
+                         selector: 'edge[interaction_type="Repression"]',
+                        //  style: { 'line-color': '#ff4d4d', 'target-arrow-color': '#ff4d4d', 'target-arrow-shape': 'tee' } 
+                         style: { 'line-color': '#e60000', 'target-arrow-color': '#e60000', 'target-arrow-shape': 'tee' }
+                             // T-shape arrow for repression
+                     },
+                     // Highlighting styles
+                     { selector: '.highlighted', style: { 'border-color': '#ff8c00', 'border-width': 4, 'opacity': 1, 'z-index': 10 } },
+                     { selector: '.highlighted-edge', style: { 'line-color': '#ff8c00', 'target-arrow-color': '#ff8c00', 'width': 3, 'opacity': 1, 'z-index': 9 } },
+                     { selector: '.faded', style: { 'opacity': 0.1, /* Faded colors optional */ } } // Simpler fade for bipartite
+                 ],
+                 // Use preset layout as positions are provided by backend
+                 layout: { name: 'preset', fit: true, padding: 50 }
+             });
+
+             cyBipartite.on('tap', 'node', event => highlightNodeAndNeighborsBipartite(event.target));
+             cyBipartite.on('tap', event => { if (event.target === cyBipartite) clearHighlightingBipartite(); });
+
+             setupTooltipsBipartite(cyBipartite);
+             populateSelectorBipartite(currentBipartiteNodes);
+             cyBipartite.ready(() => cyBipartite.fit(undefined, 50)); // Use padding from layout
+              setStatus('Bipartite', 'info', `Graph updated`);
+        }
+
+        async function fetchAndDrawGraphBipartite() {
+             setStatus('Bipartite', 'loading', 'Loading full network...');
+             try {
+                 const response = await fetch(`/api/full_network`);
+                 const responseClone = response.clone();
+                 if (!response.ok) {
+                     let errorMsg = `HTTP error! status: ${response.status}`;
+                    try { errorMsg = (await responseClone.json()).error || errorMsg; }
+                    catch (e) { errorMsg = await responseClone.text() || errorMsg; }
+                    throw new Error(errorMsg);
+                 }
+                  const networkData = await response.json();
+                 if (!networkData || typeof networkData !== 'object' || (!Array.isArray(networkData.nodes) && !Array.isArray(networkData.edges)) ) {
+                    throw new Error("Received invalid network data structure for bipartite.");
+                 }
+                 drawGraphBipartite({ nodes: networkData.nodes || [], edges: networkData.edges || [] });
+
+             } catch (error) {
+                 console.error('Error fetching/drawing Bipartite graph:', error);
+                 setStatus('Bipartite', 'error', error.message);
+                  if (cyBipartite) { cyBipartite.destroy(); cyBipartite = null; } // Cleanup on error
+                  document.getElementById('cyBipartite').innerHTML = ''; // Clear container
+                  populateSelectorBipartite([]);
+             }
+         }
+
+        // --- Initial Setup & Global Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Activate the first tab by default
+            openTab({ currentTarget: document.querySelector('.tab-button') }, 'tfNetworkTab');
+
+            // TF Network Listeners
+            document.getElementById('updateButtonTf').addEventListener('click', fetchAndDrawGraphTf);
+            document.getElementById('thresholdInput').addEventListener('keypress', e => { if (e.key === 'Enter') fetchAndDrawGraphTf(); });
+            document.getElementById('tfSelectorTf').addEventListener('change', event => {
+                const selectedId = event.target.value;
+                if (selectedId && cyTf) {
+                    const node = cyTf.getElementById(selectedId);
+                    if (node.length > 0) highlightNodeAndNeighborsTf(node); else clearHighlightingTf();
+                } else clearHighlightingTf();
+            });
+
+            // Bipartite Network Listeners
+            document.getElementById('nodeSelectorBipartite').addEventListener('change', event => {
+                 const selectedId = event.target.value;
+                 if (selectedId && cyBipartite) {
+                     const node = cyBipartite.getElementById(selectedId);
+                     if (node.length > 0) highlightNodeAndNeighborsBipartite(node); else clearHighlightingBipartite();
+                 } else clearHighlightingBipartite();
+            });
+        });
+
+    </script>
+
+</body>
+</html>
