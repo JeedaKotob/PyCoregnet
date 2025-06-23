@@ -1,6 +1,7 @@
 import json
 from itertools import combinations
 import random
+import pandas as pd
 
 # --- KInd of our backend codes here ---
 
@@ -148,11 +149,17 @@ def create_coregulated_network(target_tfs,threshold=1):
 
     return {'nodes':nodes_data,'edges':edges_data}
 
+def get_expression_data(filepath,gene):
+    ne=pd.read_csv(filepath, index_col=0)
+    gene_exp=ne.loc[gene].to_list()
+    return gene_exp
 
-grn = load_grn_data("data/grn.json")
-tfs=identify_transcription_factors(grn)
-tf_targets=get_tf_targets(grn)
-create_tf_interaction_network(tf_targets)
-create_full_network(grn)
-target_tfs=get_target_tfs(grn)
-create_coregulated_network(grn,target_tfs)
+
+# get_expression_data('data/CIT_BLCA_EXP.csv','EEF1A1')
+# grn = load_grn_data("data/grn.json")
+# tfs=identify_transcription_factors(grn)
+# tf_targets=get_tf_targets(grn)
+# create_tf_interaction_network(tf_targets)
+# create_full_network(grn)
+# target_tfs=get_target_tfs(grn)
+# create_coregulated_network(grn,target_tfs)
