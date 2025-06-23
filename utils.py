@@ -72,7 +72,6 @@ def create_tf_interaction_network(tf_targets, threshold=1):
 def create_full_network(grn_data):
     edges=[]
     nodes=[]
-    tfs=sorted(tfs)
     bygene=grn_data.get('adjlist').get('bygene')
     bytf=grn_data.get('adjlist').get('bytf')
     tfs = sorted(bytf.keys())
@@ -100,9 +99,60 @@ def create_full_network(grn_data):
     
     return {'nodes': nodes, 'edges': edges}
 
+def get_target_tfs(grn_data):
+    target_tfs={}
+    bygene = grn_data.get('adjlist').get('bygene')
 
-grn= load_grn_data("../data/grn.json")
+    for target, tfs in bygene.items():
+        target_tfs[target] = set(tfs.get('act')+ tfs.get('rep'))
+
+    return target_tfs
+
+def create_coregulated_network(target_tfs,threshold=1):
+    # targets=grn_data.get('adjlist').get('bygene').keys()
+    targets=list(target_tfs.keys())
+    nodes_data=[]
+    edges_data=[]
+    edge_ids=set()
+
+    target_nodes_in_graph=set()
+
+    for tgt1,tgt2 in combinations(targets,2):
+        tfs1= target_tfs.get(tgt1)
+        tfs2= target_tfs.get(tgt2)
+        shared_tfs=tfs1.intersection(tfs2)
+        shared_count = len(shared_tfs)
+
+        if shared_count >= threshold:
+            edge_id = tuple(sorted((tgt1,tgt2))) ###CHECKKK ()()
+            if edge_id not in edge_ids:
+                edges_data.append({
+                    'data':{
+                        'id':f"{tgt1}-{tgt2}_shared",
+                        'source': tgt1,
+                        'target': tgt2,
+                        'shared_count':shared_count,
+                        'shared_tfs':list(shared_tfs)
+                    }
+                })
+                edge_ids.add(edge_id)
+                target_nodes_in_graph.add(tgt1)
+                target_nodes_in_graph.add(tgt2)
+
+    nodes_to_include=target_nodes_in_graph if edges_data else targets
+
+    for target in targets:
+        if target in nodes_to_include:
+            tf_count=len(target_tfs[target])
+            nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'tf'}})
+
+    return {'nodes':nodes_data,'edges':edges_data}
+
+
+grn = load_grn_data("data/grn.json")
 tfs=identify_transcription_factors(grn)
 tf_targets=get_tf_targets(grn)
 create_tf_interaction_network(tf_targets)
-create_full_network(grn,tfs)
+create_full_network(grn)
+target_tfs=get_target_tfs(grn)
+create_coregulated_network(grn,target_tfs)
