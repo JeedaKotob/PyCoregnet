@@ -29,7 +29,7 @@ def get_tf_targets(grn_data):
 
     return tf_targets
 
-def create_tf_interaction_network(tf_targets, threshold=1):
+def create_tf_interaction_network(tf_targets, threshold=5):
     tfs = list(tf_targets.keys())
     nodes_data = []
     edges_data = []
@@ -61,12 +61,13 @@ def create_tf_interaction_network(tf_targets, threshold=1):
 
     # Add nodes that are part of the graph OR all TFs if graph is empty
   
-    nodes_to_include = tf_nodes_in_graph if edges_data else tfs
+    nodes_to_include = tf_nodes_in_graph if edges_data else None
 
-    for tf in tfs:
-         if tf in nodes_to_include:
-            target_count = len(tf_targets[tf])
-            nodes_data.append({'data': {'id': tf, 'target_count': target_count, 'type': 'tf'}})
+    if edges_data: 
+        for tf in tfs:
+            if tf in nodes_to_include:
+                target_count = len(tf_targets[tf])
+                nodes_data.append({'data': {'id': tf, 'target_count': target_count, 'type': 'tf'}})
 
     return {'nodes': nodes_data, 'edges': edges_data}
 

@@ -38,8 +38,10 @@ def register_callbacks(app):
         return no_update, None
     
     @app.callback(
-        [Output('coreg-network-graph','elements', allow_duplicate=True),
-        Output('coreg-node-selector','value', allow_duplicate=True)],
+        [Output('coreg-network-graph', 'elements', allow_duplicate=True),
+        Output('coreg-node-selector', 'value', allow_duplicate=True),
+        Output('coreg-threshold-input', 'value', allow_duplicate=True),
+        Output('coreg-network-store', 'data', allow_duplicate=True)],  # 👈 added this
         Input('coreg-reset-button', 'n_clicks'),
         prevent_initial_call=True
     )
@@ -47,14 +49,15 @@ def register_callbacks(app):
         if n_clicks > 0:
             grn = load_grn_data("data/grn.json")
             if grn:
-                tf_targets= get_tf_targets(grn)
-                coreg_net=create_tf_interaction_network(tf_targets,1)
+                tf_targets = get_tf_targets(grn)
+                coreg_net = create_tf_interaction_network(tf_targets, threshold=5)  # 👈 reset to 5
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
-                    e['classes']=''
-                return all_elements, None
-    
-        return no_update, None
+                    e['classes'] = ''
+                return all_elements, None, 5, all_elements 
+
+        return no_update, None, no_update, no_update
+
     
     @app.callback(
             Output('full-node-selector','value',allow_duplicate=True),
@@ -253,4 +256,22 @@ def register_callbacks(app):
             html.P([html.B("Represses: "), ', '.join(reps) if reps else "None"])
         ])
            
+    @app.callback(
+        [Output('coreg-network-graph', 'elements', allow_duplicate=True),
+        Output('coreg-network-store', 'data', allow_duplicate=True)],
+        Input('coreg-update-button', 'n_clicks'),
+        State('coreg-threshold-input', 'value'),
+        prevent_initial_call=True
+    )
+    def update_coreg_graph(n_clicks, threshold):
+        if n_clicks > 0:
+            grn = load_grn_data("data/grn.json")
+            if grn:
+                tf_targets = get_tf_targets(grn)
+                coreg_net = create_tf_interaction_network(tf_targets, threshold or 1)
+                all_elements = coreg_net['nodes'] + coreg_net['edges']
+                for e in all_elements:
+                    e['classes'] = ''
+                return all_elements, all_elements  # Store updated data too
+        return no_update, no_update
 

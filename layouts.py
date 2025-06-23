@@ -100,7 +100,7 @@ def tab_content(tab_name):
         grn=load_grn_data("data/grn.json")
         if grn:
             tf_targets=get_tf_targets(grn)
-            coreg_net=create_tf_interaction_network(tf_targets,1)
+            coreg_net=create_tf_interaction_network(tf_targets,5)
             all_elements=coreg_net['nodes']+coreg_net['edges']
             return html.Div([
                 html.H3("Coregulators Network"),
@@ -139,6 +139,18 @@ def tab_content(tab_name):
                             placeholder='Select a node...',
                             style={'fontFamily': 'monospace'} 
                         ),
+                        html.Label("Min Shared Targets Threshold:"),
+                        dcc.Input(
+                            id='coreg-threshold-input',
+                            type='number',
+                            value=5,
+                            min=1,
+                            debounce=True,
+                            style={'width': '100px', 'marginBottom': '10px'}
+                        ),
+                        html.Button("Update Graph", id="coreg-update-button", n_clicks=0, className="update-btn"),
+
+
                         html.Div([
                             dcc.Tabs(
                                 id='coreg-info-tabs',
