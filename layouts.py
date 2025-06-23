@@ -1,7 +1,9 @@
 from dash import html, dcc
 import dash_cytoscape as cyto
-from utils import load_grn_data, create_full_network
-from stylesheet import full_network_stylesheet
+from utils import load_grn_data, create_full_network, identify_transcription_factors,get_tf_targets,create_tf_interaction_network
+from stylesheet import full_network_stylesheet, coreg_network_stylesheet
+
+cyto.load_extra_layouts() 
 
 def navbar(active_path=""):
     return html.Nav(className="navbar", children=[
@@ -59,7 +61,7 @@ def tab_content(tab_name):
                     html.Div(className="network-controls", children=[
                         html.Label("Highlight Node:"),
                         dcc.Dropdown(
-                            id='node-selector',
+                            id='full-node-selector',
                             options=[
                                 {
                                     'label': f"{node['data']['id']}   ({node['data']['type']})",
@@ -73,7 +75,7 @@ def tab_content(tab_name):
 
                         html.Div([
                             dcc.Tabs(
-                                id='node-info-tabs',
+                                id='full-info-tabs',
                                 value='regulation',
                                 className='node-tabs',
                                 children=[
@@ -81,10 +83,10 @@ def tab_content(tab_name):
                                     dcc.Tab(label='Gene Expression', value='expression', className='node-tab', selected_className='node-tab--selected'),
                                 ]
                             ),
-                            html.Div(id='node-info-content', className='node-info-content') 
+                            html.Div(id='full-info-content', className='node-info-content') 
                         ], className='node-info-panel'),
 
-                        html.Button("Reset Graph", id="reset-button", n_clicks=0, className="reset-btn") 
+                        html.Button("Reset Graph", id="full-reset-button", n_clicks=0, className="reset-btn") 
 
 
                     ])
@@ -95,10 +97,72 @@ def tab_content(tab_name):
         
 
     elif tab_name == 'coregs':
-        return html.Div([
-            html.H3('Coregulators Graph'),
-            html.P("Here is coregs graph connected with shared targets")
-        ])
+        grn=load_grn_data("data/grn.json")
+        if grn:
+            tf_targets=get_tf_targets(grn)
+            coreg_net=create_tf_interaction_network(tf_targets,1)
+            all_elements=coreg_net['nodes']+coreg_net['edges']
+            return html.Div([
+                html.H3("Coregulators Network"),
+                dcc.Store(id='coreg-network-store',data=all_elements),
+                html.Div(className='coreg-network-layout',children=[
+                    html.Div(className="cyto-graph-wrapper", children=[
+                        cyto.Cytoscape(
+                            id='coreg-network-graph',
+                            layout={
+                                'name': 'cose',
+                                'quality': 'default',
+                                'fit': True,
+                                'padding': 40,
+                                'animate': False,
+                                'nodeRepulsion': 1000000,
+                                'edgeElasticity': 100,
+                                'gravity': 50,
+                                'numIter': 1000
+                            },
+                            style={'width': '100%', 'height': '800px'},
+                            elements=all_elements,
+                            stylesheet=coreg_network_stylesheet
+                        )
+                    ]),
+
+                    html.Div(className="network-controls",children=[
+                        html.Label("Highlight TF:"),
+                        dcc.Dropdown(
+                            id='coreg-node-selector',
+                            options=[
+                                {
+                                    'label': f"{node['data']['id']}",
+                                    'value': node['data']['id']
+                                } for node in coreg_net['nodes']
+                            ],
+                            placeholder='Select a node...',
+                            style={'fontFamily': 'monospace'} 
+                        ),
+                        html.Div([
+                            dcc.Tabs(
+                                id='coreg-info-tabs',
+                                value='regulation',
+                                className='node-tabs',
+                                children=[
+                                    dcc.Tab(label='Regulation', value='regulation', className='node-tab', selected_className='node-tab--selected'),
+                                    dcc.Tab(label='Gene Expression', value='expression', className='node-tab', selected_className='node-tab--selected'),
+                                ]
+                            ),
+                            html.Div(id='coreg-info-content', className='node-info-content') 
+                        ], className='node-info-panel'),
+
+                        html.Button("Reset Graph", id="coreg-reset-button", n_clicks=0, className="reset-btn") 
+
+                    ])
+                ])
+            ])
+                
+        else:
+            return html.Div([
+                html.H3('Coregulators Graph'),
+                html.P("Here is coregs graph connected with shared targets")
+            ])
     elif tab_name == 'targets':
         return html.Div([
             html.H3("Coregulated Graphs"),
