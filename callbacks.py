@@ -41,7 +41,7 @@ def register_callbacks(app):
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
         Output('coreg-node-selector', 'value', allow_duplicate=True),
         Output('coreg-threshold-input', 'value', allow_duplicate=True),
-        Output('coreg-network-store', 'data', allow_duplicate=True)],  # 👈 added this
+        Output('coreg-network-store', 'data', allow_duplicate=True)], 
         Input('coreg-reset-button', 'n_clicks'),
         prevent_initial_call=True
     )
@@ -50,7 +50,7 @@ def register_callbacks(app):
             grn = load_grn_data("data/grn.json")
             if grn:
                 tf_targets = get_tf_targets(grn)
-                coreg_net = create_tf_interaction_network(tf_targets, threshold=5)  # 👈 reset to 5
+                coreg_net = create_tf_interaction_network(tf_targets, threshold=5)  
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
@@ -258,12 +258,14 @@ def register_callbacks(app):
            
     @app.callback(
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
-        Output('coreg-network-store', 'data', allow_duplicate=True)],
+        Output('coreg-network-store', 'data', allow_duplicate=True),
+        Output('coreg-node-selector','value',allow_duplicate=True)],
         Input('coreg-update-button', 'n_clicks'),
+        State('coreg-node-selector','value'),
         State('coreg-threshold-input', 'value'),
         prevent_initial_call=True
     )
-    def update_coreg_graph(n_clicks, threshold):
+    def update_coreg_graph(n_clicks, selected_node, threshold):
         if n_clicks > 0:
             grn = load_grn_data("data/grn.json")
             if grn:
@@ -272,6 +274,8 @@ def register_callbacks(app):
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
-                return all_elements, all_elements  # Store updated data too
-        return no_update, no_update
+                if selected_node in tf_targets and len(tf_targets[selected_node]) < threshold:
+                    selected_node = ''
+                return all_elements, all_elements, selected_node  
+        return no_update, no_update, no_update
 
