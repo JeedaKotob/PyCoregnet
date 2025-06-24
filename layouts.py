@@ -1,7 +1,7 @@
 from dash import html, dcc
 import dash_cytoscape as cyto
-from utils import load_grn_data, create_full_network, identify_transcription_factors,get_tf_targets,create_tf_interaction_network
-from stylesheet import full_network_stylesheet, coreg_network_stylesheet
+from utils import *
+from stylesheet import full_network_stylesheet, coreg_network_stylesheet, target_network_stylesheet
 
 cyto.load_extra_layouts() 
 
@@ -38,8 +38,8 @@ def dashboard_layout():
     ])
 
 def tab_content(tab_name):
+    grn=load_grn_data("data/grn.json")
     if tab_name == 'full':
-        grn=load_grn_data("data/grn.json")
         if grn:
             full_net=create_full_network(grn)
             all_elements = full_net['nodes'] + full_net['edges']
@@ -97,7 +97,6 @@ def tab_content(tab_name):
         
 
     elif tab_name == 'coregs':
-        grn=load_grn_data("data/grn.json")
         if grn:
             tf_targets=get_tf_targets(grn)
             coreg_net=create_tf_interaction_network(tf_targets,5)
@@ -111,13 +110,13 @@ def tab_content(tab_name):
                             id='coreg-network-graph',
                             layout={
                                 'name': 'cose',
-                                'quality': 'default',
+                                'quality': 'default', # for fcose
                                 'fit': True,
                                 'padding': 40,
                                 'animate': False,
-                                'nodeRepulsion': 1000000,
+                                'nodeRepulsion': 2500000,
                                 'edgeElasticity': 100,
-                                'gravity': 50,
+                                'gravity': 70,
                                 'numIter': 1000
                             },
                             style={'width': '100%', 'height': '800px'},
@@ -176,10 +175,79 @@ def tab_content(tab_name):
                 html.P("Here is coregs graph connected with shared targets")
             ])
     elif tab_name == 'targets':
-        return html.Div([
-            html.H3("Coregulated Graphs"),
-            html.P("Here is coregulated graph connected with shared regulators ")
-        ])
+        if grn:
+            target_tfs=get_target_tfs(grn)
+            target_net=create_coregulated_network(target_tfs,10)
+            all_elements=target_net['nodes']+target_net['edges']
+            return html.Div([
+                html.H3("Coregulated Graphs"),
+                dcc.Store(id='target-network-store',data=all_elements),
+                html.Div(className='target-network-layout',children=[
+                    html.Div(className='cyto-graph-wrapper',children=[
+                        cyto.Cytoscape(
+                            id='target-network-graph',
+                            layout={
+                                'name': 'cose',
+                                'quality': 'default', # for fcose
+                                'fit': True,
+                                'padding': 40,
+                                'animate': False,
+                                'nodeRepulsion': 1000000,
+                                'edgeElasticity': 100,
+                                'gravity': 50,
+                                'numIter': 1000
+                            },
+                            style={'width':'100%','height':'800px'},
+                            elements=all_elements,
+                            stylesheet=target_network_stylesheet
+                        )
+                    ]),
+
+                    html.Div(className='network-controls',children=[
+                        html.Label("Highlight Target Gene:"),
+                        dcc.Dropdown(
+                            id='target-node-selector',
+                            options=[
+                                {
+                                    'label':f"{node['data']['id']}",
+                                    'value':node['data']['id']
+                                } for node in target_net['nodes']
+                            ],
+                            placeholder='Select a node...',
+                            style={'fontFamily':'monospace'}
+                        ),
+                        html.Label("Min Shared TF Threshold:"),
+                        dcc.Input(
+                            id='target-threshold-input',
+                            type='number',
+                            value=10,
+                            min=1,
+                            debounce=True,
+                            style={'width': '100px', 'marginBottom': '10px'}
+                        ),
+                        html.Button("Update Graph", id="target-update-button", n_clicks=0, className="update-btn"),
+
+                        html.Div([
+                            dcc.Tabs(
+                                id='target-info-tabs',
+                                value='regulation',
+                                className='node-tabs',
+                                children=[
+                                    dcc.Tab(label='Regulation', value='regulation', className='node-tab', selected_className='node-tab--selected'),
+                                    dcc.Tab(label='Gene Expression', value='expression', className='node-tab', selected_className='node-tab--selected'),
+                                ]
+                            ),
+                            html.Div(id='target-info-content', className='node-info-content') 
+                        ], className='node-info-panel'),
+
+                        html.Button("Reset Graph", id="target-reset-button", n_clicks=0, className="reset-btn") 
+
+                    ])
+                ])
+            ])
+        else:
+            return html.Div("Error loading GRN data.")
+        
     elif tab_name == 'samples':
         return html.Div([
             html.H3("Patients Graph"),

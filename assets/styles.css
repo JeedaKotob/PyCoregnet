@@ -127,6 +127,11 @@ p {
     gap: 20px;
 }
 
+.target-network-layout{
+    display: flex;
+    gap: 20px;
+}
+
 /* Left side graph */
 .cyto-graph-wrapper {
     flex-grow: 1;

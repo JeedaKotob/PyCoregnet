@@ -57,6 +57,28 @@ def register_callbacks(app):
                 return all_elements, None, 5, all_elements 
 
         return no_update, None, no_update, no_update
+    
+    @app.callback(
+        [Output('target-network-graph', 'elements', allow_duplicate=True),
+        Output('target-node-selector', 'value', allow_duplicate=True),
+        Output('target-threshold-input', 'value', allow_duplicate=True),
+        Output('target-network-store', 'data', allow_duplicate=True)], 
+        Input('target-reset-button', 'n_clicks'),
+        prevent_initial_call=True
+    )
+    def reset_target_graph_and_dropdown(n_clicks):
+        if n_clicks > 0:
+            grn = load_grn_data("data/grn.json")
+            if grn:
+                target_tfs = get_target_tfs(grn)
+                target_net = create_coregulated_network(target_tfs, threshold=10)  
+                all_elements = target_net['nodes'] + target_net['edges']
+                for e in all_elements:
+                    e['classes'] = ''
+                return all_elements, None, 10, all_elements 
+
+        return no_update, None, no_update, no_update
+
 
     
     @app.callback(
@@ -69,6 +91,7 @@ def register_callbacks(app):
             return tap_node['id']
         return None
     
+
     @app.callback(
             Output('coreg-node-selector','value',allow_duplicate=True),
             Input('coreg-network-graph','tapNodeData'),
@@ -78,7 +101,18 @@ def register_callbacks(app):
         if tap_node:
             return tap_node['id']
         return None
-    
+
+    @app.callback(
+            Output('target-node-selector','value',allow_duplicate=True),
+            Input('target-network-graph','tapNodeData'),
+            prevent_initial_call=True
+    )
+    def sync_dropdown_coreg_graph(tap_node):
+        if tap_node:
+            return tap_node['id']
+        return None
+
+
     @app.callback(
         Output('full-network-graph', 'elements',allow_duplicate=True),
         Input('full-node-selector', 'value'),
@@ -126,6 +160,45 @@ def register_callbacks(app):
     )
 
     def update_coreg_highlights(selected_node, original_elements):
+
+        if original_elements is None:
+            return no_update
+        
+        if not selected_node:
+            return original_elements
+
+        nodes = [e.copy() for e in original_elements if 'source' not in e['data']]
+        edges = [e.copy() for e in original_elements if 'source' in e['data']]
+
+        connected_nodes = set()
+        for edge in edges:
+            src = edge['data']['source']
+            tgt = edge['data']['target']
+            if selected_node in (src, tgt):
+                edge['classes'] = 'highlighted-edge'
+                connected_nodes.update([src, tgt])
+            else:
+                edge['classes'] = 'faded'
+
+        for node in nodes:
+            nid = node['data']['id']
+            if nid == selected_node:
+                node['classes'] = 'highlighted'
+            elif nid in connected_nodes:
+                node['classes'] = ''
+            else:
+                node['classes'] = 'faded'
+
+        return nodes + edges
+    
+    @app.callback(
+        Output('target-network-graph', 'elements',allow_duplicate=True),
+        Input('target-node-selector', 'value'),
+        State('target-network-store', 'data'),
+        prevent_initial_call=True
+    )
+
+    def update_target_highlights(selected_node, original_elements):
 
         if original_elements is None:
             return no_update
@@ -255,6 +328,50 @@ def register_callbacks(app):
             html.P([html.B("Activates: "), ', '.join(acts) if acts else "None"]),
             html.P([html.B("Represses: "), ', '.join(reps) if reps else "None"])
         ])
+
+    @app.callback(
+        Output('target-info-content', 'children', allow_duplicate=True),
+        Input('target-node-selector', 'value'),
+        Input('target-info-tabs', 'value'),
+        prevent_initial_call='initial_duplicate'
+    )
+    def update_target_info_panel(selected_node, selected_tab):
+        if not selected_node:
+            if selected_tab == 'expression':
+                return html.P("Select a node to view expression.")
+            else:
+                return html.P("Select a node to view regulation information.")
+
+        grn = load_grn_data("data/grn.json")
+        if not grn:
+            return "Error loading GRN data."
+
+        bygene = grn['adjlist'].get('bygene', {})
+
+        if selected_node in bygene:
+            node_type = "Transcription Factor"
+            acts = bygene[selected_node].get('act', [])
+            reps = bygene[selected_node].get('rep', [])
+       
+        else:
+            return html.P("Node not found in GRN data.")
+
+    
+        if selected_tab == 'expression':
+            expression_values = get_expression_data('data/CIT_BLCA_EXP.csv', selected_node)
+            expression_text = ', '.join(f"{val:.2f}" for val in expression_values)
+            return html.Div([
+                html.H4(f"{node_type}: {selected_node}"),
+                html.P([html.B("Expression values: "), expression_text])
+            ])
+        
+        else: 
+          return html.Div([
+            html.H4(f"{node_type}: {selected_node}"),
+            html.P([html.B("TF Count Count: "), str(len(acts) + len(reps))]),
+            html.P([html.B("Activated By: "), ', '.join(acts) if acts else "None"]),
+            html.P([html.B("Repressed By: "), ', '.join(reps) if reps else "None"])
+        ])
            
     @app.callback(
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
@@ -279,3 +396,26 @@ def register_callbacks(app):
                 return all_elements, all_elements, selected_node  
         return no_update, no_update, no_update
 
+
+    @app.callback(
+        [Output('target-network-graph', 'elements', allow_duplicate=True),
+        Output('target-network-store', 'data', allow_duplicate=True),
+        Output('target-node-selector','value',allow_duplicate=True)],
+        Input('target-update-button', 'n_clicks'),
+        State('target-node-selector','value'),
+        State('target-threshold-input', 'value'),
+        prevent_initial_call=True
+    )
+    def update_target_graph(n_clicks, selected_node, threshold):
+        if n_clicks > 0:
+            grn = load_grn_data("data/grn.json")
+            if grn:
+                target_tfs = get_target_tfs(grn)
+                target_net = create_tf_interaction_network(target_tfs, threshold or 10)
+                all_elements = target_net['nodes'] + target_net['edges']
+                for e in all_elements:
+                    e['classes'] = ''
+                if selected_node in target_tfs and len(target_tfs[selected_node]) < threshold:
+                    selected_node = ''
+                return all_elements, all_elements, selected_node  
+        return no_update, no_update, no_update

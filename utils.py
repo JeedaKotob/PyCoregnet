@@ -146,7 +146,8 @@ def create_coregulated_network(target_tfs,threshold=1):
     for target in targets:
         if target in nodes_to_include:
             tf_count=len(target_tfs[target])
-            nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'tf'}})
+            if tf_count>=10:
+                nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'tf'}})
 
     return {'nodes':nodes_data,'edges':edges_data}
 
@@ -163,4 +164,4 @@ def get_expression_data(filepath,gene):
 # create_tf_interaction_network(tf_targets)
 # create_full_network(grn)
 # target_tfs=get_target_tfs(grn)
-# create_coregulated_network(grn,target_tfs)
+# target_net=create_coregulated_network(target_tfs,1)
