@@ -293,41 +293,43 @@ def register_callbacks(app):
     )
     def update_coreg_info_panel(selected_node, selected_tab):
         if not selected_node:
-            if selected_tab == 'expression':
-                return html.P("Select a node to view expression.")
+            if selected_tab == 'activity':
+                return html.P("Select a TF to view activity level.")
             else:
                 return html.P("Select a node to view regulation information.")
 
-        grn = load_grn_data("data/grn.json")
-        if not grn:
-            return "Error loading GRN data."
-
-        bytf = grn['adjlist'].get('bytf', {})
-
-        if selected_node in bytf:
-            node_type = "Transcription Factor"
-            acts = bytf[selected_node].get('act', [])
-            reps = bytf[selected_node].get('rep', [])
-       
         else:
-            return html.P("Node not found in GRN data.")
+            grn = load_grn_data("data/grn.json")
+            if not grn:
+                return "Error loading GRN data."
+            tf_targets = get_tf_targets(grn)
+            coreg_net=create_tf_interaction_network(tf_targets)
+            edges=coreg_net['edges']
+            tf=selected_node
+            coregs=[]
+            for edge in edges:
+                source=edge['data']['source']
+                target=edge['data']['target']
+                if tf == source or tf==target:
+                    coregs.append(edge['data'])
+            coregs = sorted(coregs, key=lambda x: x['shared_count'], reverse=True)
+            coregs_output = []
+            for co in coregs:
+                coreg = co['target'] if tf == co['source'] else co['source']
+                coregs_output.append(html.P(f"{coreg} - {co['shared_count']} shared targets"))
 
-    
-        if selected_tab == 'expression':
-            expression_values = get_expression_data('data/CIT_BLCA_EXP.csv', selected_node)
-            expression_text = ', '.join(f"{val:.2f}" for val in expression_values)
-            return html.Div([
-                html.H4(f"{node_type}: {selected_node}"),
-                html.P([html.B("Expression values: "), expression_text])
-            ])
-        
-        else: 
-          return html.Div([
-            html.H4(f"{node_type}: {selected_node}"),
-            html.P([html.B("Target Count: "), str(len(acts) + len(reps))]),
-            html.P([html.B("Activates: "), ', '.join(acts) if acts else "None"]),
-            html.P([html.B("Represses: "), ', '.join(reps) if reps else "None"])
-        ])
+            if selected_tab == 'activity':
+                return html.Div([
+                    html.H4(f"{"Transcription Factor"}: {selected_node}"),
+                    html.P("Nothin here yet")
+                ])
+            else:
+                return html.Div([
+                    html.H4(f"Transcription Factor: {selected_node}"),
+                    html.P(f"{tf}'s coregulators - shared targets count:"),
+                    *coregs_output  
+                ])
+           
 
     @app.callback(
         Output('target-info-content', 'children', allow_duplicate=True),
@@ -349,7 +351,7 @@ def register_callbacks(app):
         bygene = grn['adjlist'].get('bygene', {})
 
         if selected_node in bygene:
-            node_type = "Transcription Factor"
+            node_type = "Target Gene"
             acts = bygene[selected_node].get('act', [])
             reps = bygene[selected_node].get('rep', [])
        

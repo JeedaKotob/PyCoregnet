@@ -157,7 +157,7 @@ def tab_content(tab_name):
                                 className='node-tabs',
                                 children=[
                                     dcc.Tab(label='Regulation', value='regulation', className='node-tab', selected_className='node-tab--selected'),
-                                    dcc.Tab(label='Gene Expression', value='expression', className='node-tab', selected_className='node-tab--selected'),
+                                    dcc.Tab(label='TF Acticity', value='activity', className='node-tab', selected_className='node-tab--selected'),
                                 ]
                             ),
                             html.Div(id='coreg-info-content', className='node-info-content') 
