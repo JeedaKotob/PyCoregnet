@@ -154,7 +154,7 @@ target_network_stylesheet = [
         "selector": "node",
         "style": {
             "shape":'ellipse',
-            'background-color': '#66a3ff',
+            'background-color': '#c2b62f',
             'border-color': '#555',
             'border-width': 1,
             'label': 'data(id)', 
