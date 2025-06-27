@@ -107,7 +107,7 @@ def register_callbacks(app):
             Input('target-network-graph','tapNodeData'),
             prevent_initial_call=True
     )
-    def sync_dropdown_coreg_graph(tap_node):
+    def sync_dropdown_target_graph(tap_node):
         if tap_node:
             return tap_node['id']
         return None
@@ -289,9 +289,10 @@ def register_callbacks(app):
         Output('coreg-info-content', 'children', allow_duplicate=True),
         Input('coreg-node-selector', 'value'),
         Input('coreg-info-tabs', 'value'),
+        State('coreg-threshold-input','value'),
         prevent_initial_call='initial_duplicate'
     )
-    def update_coreg_info_panel(selected_node, selected_tab):
+    def update_coreg_info_panel(selected_node, selected_tab,threshold):
         if not selected_node:
             if selected_tab == 'activity':
                 return html.P("Select a TF to view activity level.")
@@ -308,10 +309,11 @@ def register_callbacks(app):
             tf=selected_node
             coregs=[]
             for edge in edges:
-                source=edge['data']['source']
-                target=edge['data']['target']
-                if tf == source or tf==target:
-                    coregs.append(edge['data'])
+                if edge['data']['shared_count']>=threshold:
+                    source=edge['data']['source']
+                    target=edge['data']['target']
+                    if tf == source or tf==target:
+                        coregs.append(edge['data'])
             coregs = sorted(coregs, key=lambda x: x['shared_count'], reverse=True)
             coregs_output = []
             for co in coregs:
@@ -335,12 +337,13 @@ def register_callbacks(app):
         Output('target-info-content', 'children', allow_duplicate=True),
         Input('target-node-selector', 'value'),
         Input('target-info-tabs', 'value'),
+        State('target-threshold-input','value'),
         prevent_initial_call='initial_duplicate'
     )
-    def update_target_info_panel(selected_node, selected_tab):
+    def update_target_info_panel(selected_node, selected_tab,threshold):
         if not selected_node:
-            if selected_tab == 'expression':
-                return html.P("Select a node to view expression.")
+            if selected_tab == 'grn':
+                return html.P("Select a node to view its grn.")
             else:
                 return html.P("Select a node to view regulation information.")
 
@@ -348,32 +351,36 @@ def register_callbacks(app):
         if not grn:
             return "Error loading GRN data."
 
-        bygene = grn['adjlist'].get('bygene', {})
-
-        if selected_node in bygene:
-            node_type = "Target Gene"
-            acts = bygene[selected_node].get('act', [])
-            reps = bygene[selected_node].get('rep', [])
-       
-        else:
-            return html.P("Node not found in GRN data.")
-
+        target_tfs=get_target_tfs(grn)
+        target_net=create_coregulated_network(target_tfs)
+        edges=target_net['edges']
+        tgt=selected_node
+        coregulated=[]
+        for edge in edges:
+            if edge['data']['shared_count']>=threshold: 
+                source=edge['data']['source']
+                target=edge['data']['target']
+                if tgt == source or tgt==target:
+                    coregulated.append(edge['data'])
+        coregulated = sorted(coregulated, key=lambda x:x['shared_count'],reverse=True)
+        coregulated_output=[]
+        for co in coregulated:
+            cotgt=co['target'] if tgt == co['source'] else co['source']
+            coregulated_output.append(html.P(f"{cotgt} - {co['shared_count']} shared transcription factors"))
     
-        if selected_tab == 'expression':
-            expression_values = get_expression_data('data/CIT_BLCA_EXP.csv', selected_node)
-            expression_text = ', '.join(f"{val:.2f}" for val in expression_values)
-            return html.Div([
-                html.H4(f"{node_type}: {selected_node}"),
-                html.P([html.B("Expression values: "), expression_text])
-            ])
         
-        else: 
-          return html.Div([
-            html.H4(f"{node_type}: {selected_node}"),
-            html.P([html.B("TF Count Count: "), str(len(acts) + len(reps))]),
-            html.P([html.B("Activated By: "), ', '.join(acts) if acts else "None"]),
-            html.P([html.B("Repressed By: "), ', '.join(reps) if reps else "None"])
-        ])
+        if selected_tab =='grn':
+            return html.Div([
+                    html.H4(f"{"Target Gene"}: {selected_node}"),
+                    html.P("Nothin here yet")
+                ])
+        else:
+            return html.Div([
+                    html.H4(f"Transcription Factor: {selected_node}"),
+                    html.P(f"{tgt}'s target - shared transcription factor count:"),
+                    *coregulated_output 
+                ])
+
            
     @app.callback(
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
