@@ -158,7 +158,7 @@ def get_expression_data(filepath,gene):
 
 
 # get_expression_data('data/CIT_BLCA_EXP.csv','EEF1A1')
-# grn = load_grn_data("data/grn.json")
+grn = load_grn_data("data/grn.json")
 # tfs=identify_transcription_factors(grn)
 # tf_targets=get_tf_targets(grn)
 # create_tf_interaction_network(tf_targets)

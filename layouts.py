@@ -38,7 +38,6 @@ def dashboard_layout():
     ])
 
 def tab_content(tab_name):
-    grn=load_grn_data("data/grn.json")
     if tab_name == 'full':
         if grn:
             full_net=create_full_network(grn)

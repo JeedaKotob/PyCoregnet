@@ -2,7 +2,7 @@ from dash import Input, Output, State, html, no_update
 from layouts import tab_content, welcome, dashboard_layout, page_shell
 from utils import *
 def register_callbacks(app):
-    grn=load_grn_data("data/grn.json")
+    # grn=load_grn_data("data/grn.json")
 
     @app.callback(
         Output('main-content', 'children'),
