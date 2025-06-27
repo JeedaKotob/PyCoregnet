@@ -2,6 +2,7 @@ from dash import Input, Output, State, html, no_update
 from layouts import tab_content, welcome, dashboard_layout, page_shell
 from utils import *
 def register_callbacks(app):
+    grn=load_grn_data("data/grn.json")
 
     @app.callback(
         Output('main-content', 'children'),
@@ -27,7 +28,6 @@ def register_callbacks(app):
     )
     def reset_full_graph_and_dropdown(n_clicks):
         if n_clicks > 0:
-            grn = load_grn_data("data/grn.json")
             if grn:
                 full_net = create_full_network(grn)
                 all_elements = full_net['nodes'] + full_net['edges']
@@ -47,7 +47,6 @@ def register_callbacks(app):
     )
     def reset_coreg_graph_and_dropdown(n_clicks):
         if n_clicks > 0:
-            grn = load_grn_data("data/grn.json")
             if grn:
                 tf_targets = get_tf_targets(grn)
                 coreg_net = create_tf_interaction_network(tf_targets, threshold=5)  
@@ -68,7 +67,6 @@ def register_callbacks(app):
     )
     def reset_target_graph_and_dropdown(n_clicks):
         if n_clicks > 0:
-            grn = load_grn_data("data/grn.json")
             if grn:
                 target_tfs = get_target_tfs(grn)
                 target_net = create_coregulated_network(target_tfs, threshold=10)  
@@ -243,8 +241,6 @@ def register_callbacks(app):
             else:
                 return html.P("Select a node to view regulation information.")
 
-
-        grn = load_grn_data("data/grn.json")
         if not grn:
             return "Error loading GRN data."
 
@@ -300,7 +296,6 @@ def register_callbacks(app):
                 return html.P("Select a node to view regulation information.")
 
         else:
-            grn = load_grn_data("data/grn.json")
             if not grn:
                 return "Error loading GRN data."
             tf_targets = get_tf_targets(grn)
@@ -347,7 +342,6 @@ def register_callbacks(app):
             else:
                 return html.P("Select a node to view regulation information.")
 
-        grn = load_grn_data("data/grn.json")
         if not grn:
             return "Error loading GRN data."
 
@@ -393,7 +387,6 @@ def register_callbacks(app):
     )
     def update_coreg_graph(n_clicks, selected_node, threshold):
         if n_clicks > 0:
-            grn = load_grn_data("data/grn.json")
             if grn:
                 tf_targets = get_tf_targets(grn)
                 coreg_net = create_tf_interaction_network(tf_targets, threshold or 1)
@@ -417,7 +410,6 @@ def register_callbacks(app):
     )
     def update_target_graph(n_clicks, selected_node, threshold):
         if n_clicks > 0:
-            grn = load_grn_data("data/grn.json")
             if grn:
                 target_tfs = get_target_tfs(grn)
                 target_net = create_tf_interaction_network(target_tfs, threshold or 10)
