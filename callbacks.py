@@ -60,7 +60,6 @@ def register_callbacks(app):
     def reset_coreg_graph_and_dropdown(n_clicks):
         if n_clicks > 0:
             if grn:
-                tf_targets = get_tf_targets(grn)
                 coreg_net = create_tf_interaction_network(tf_targets,coreg_thresh)  
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
@@ -86,7 +85,6 @@ def register_callbacks(app):
     def reset_target_graph_and_dropdown(n_clicks):
         if n_clicks > 0:
             if grn:
-                target_tfs = get_target_tfs(grn)
                 target_net = create_coregulated_network(target_tfs, threshold=target_thresh)  
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:
@@ -354,7 +352,6 @@ def register_callbacks(app):
         else:
             if not grn:
                 return "Error loading GRN data."
-            tf_targets = get_tf_targets(grn)
             coreg_net=create_tf_interaction_network(tf_targets)
             edges=coreg_net['edges']
             tf=selected_node
@@ -406,7 +403,6 @@ def register_callbacks(app):
         if not grn:
             return "Error loading GRN data."
 
-        target_tfs=get_target_tfs(grn)
         target_net=create_coregulated_network(target_tfs)
         edges=target_net['edges']
         tgt=selected_node
@@ -457,7 +453,6 @@ def register_callbacks(app):
     def update_coreg_graph(n_clicks, selected_node, threshold):
         if n_clicks > 0:
             if grn:
-                tf_targets = get_tf_targets(grn)
                 coreg_net = create_tf_interaction_network(tf_targets, threshold)
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
@@ -492,7 +487,6 @@ def register_callbacks(app):
     def update_target_graph(n_clicks, selected_node, threshold):
         if n_clicks > 0:
             if grn:
-                target_tfs = get_target_tfs(grn)
                 target_net = create_tf_interaction_network(target_tfs, threshold)
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:

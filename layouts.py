@@ -97,7 +97,7 @@ def tab_content(tab_name):
 
     elif tab_name == 'coregs':
         if grn:
-            tf_targets=get_tf_targets(grn)
+            # tf_targets=get_tf_targets(grn)
             coreg_net=create_tf_interaction_network(tf_targets)
             all_elements=coreg_net['nodes']+coreg_net['edges']
             return html.Div([
@@ -175,7 +175,7 @@ def tab_content(tab_name):
             ])
     elif tab_name == 'targets':
         if grn:
-            target_tfs=get_target_tfs(grn)
+            # target_tfs=get_target_tfs(grn)
             target_net=create_coregulated_network(target_tfs)
             all_elements=target_net['nodes']+target_net['edges']
             return html.Div([

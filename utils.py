@@ -156,3 +156,5 @@ def get_expression_data(filepath,gene):
 grn = load_grn_data("data/grn.json")
 target_thresh=10 # used for reset target (coregulated) graph
 coreg_thresh=5 # used for reset coreg graph
+target_tfs = get_target_tfs(grn)
+tf_targets=get_tf_targets(grn)
