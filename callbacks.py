@@ -2,8 +2,7 @@ from dash import Input, Output, State, html, no_update
 from layouts import tab_content, welcome, dashboard_layout, page_shell
 from utils import *
 def register_callbacks(app):
-    # grn=load_grn_data("data/grn.json")
-
+    
     @app.callback(
         Output('main-content', 'children'),
         Input('url', 'pathname')
@@ -381,8 +380,8 @@ def register_callbacks(app):
             else:
                 return html.Div([
                     html.H4(f"Transcription Factor: {selected_node}"),
-                    html.P(f"{tf}'s target count: {target_count}"),
-                    html.P(f"{tf}'s coregulators - shared targets count:"),
+                    html.P([html.B(f"{tf}'s target count: {target_count}")]),
+                    html.P([html.B(f"{tf}'s coregulators - shared targets count:")]),
                     *coregs_output  
                 ])
            
