@@ -16,10 +16,6 @@ def load_grn_data(filepath):
         print(f"Error: Could not decode JSON from '{filepath}'.")
         return None
 
-def identify_transcription_factors(grn_data):
-    tfs=list(grn_data.get('adjlist').get('bytf').keys())
-    return tfs
-
 def get_tf_targets(grn_data):
     tf_targets = {}
     bytf = grn_data.get('adjlist', {}).get('bytf', {})

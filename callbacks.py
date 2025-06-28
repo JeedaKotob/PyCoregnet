@@ -20,6 +20,13 @@ def register_callbacks(app):
     def switch_tabs(tab_value):
         return tab_content(tab_value)
 
+
+    '''
+    Full Network Graph Reset Button:
+    - When reset button is pressed, network graph is formed again,
+      and node selections is also reset
+
+    '''
     @app.callback(
         [Output('full-network-graph','elements', allow_duplicate=True),
         Output('full-node-selector','value', allow_duplicate=True)],
@@ -37,6 +44,12 @@ def register_callbacks(app):
     
         return no_update, None
     
+
+    '''
+    Coreg Graph Reset Button:
+    - When reset button is pressed, network graph is formed again,
+      and node selection is reset and def threshold is reset too.
+    '''
     @app.callback(
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
         Output('coreg-node-selector', 'value', allow_duplicate=True),
@@ -49,14 +62,20 @@ def register_callbacks(app):
         if n_clicks > 0:
             if grn:
                 tf_targets = get_tf_targets(grn)
-                coreg_net = create_tf_interaction_network(tf_targets)  
+                coreg_net = create_tf_interaction_network(tf_targets,coreg_thresh)  
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
-                return all_elements, None, 5, all_elements 
+                return all_elements, None, coreg_thresh, all_elements 
 
         return no_update, None, no_update, no_update
     
+
+    '''
+    Target Graph Reset Button:
+    - When reset button is pressed, network graph is formed again,
+      and node selection is reset and def threshold is reset too.
+    '''
     @app.callback(
         [Output('target-network-graph', 'elements', allow_duplicate=True),
         Output('target-node-selector', 'value', allow_duplicate=True),
@@ -78,7 +97,11 @@ def register_callbacks(app):
         return no_update, None, no_update, no_update
 
 
-    
+    '''
+    Sync Dropdown with Full Graph:
+    - When a node is selected by clicking on graph, this ensures that node
+    is selected from the dropdown menu
+    '''
     @app.callback(
             Output('full-node-selector','value',allow_duplicate=True),
             Input('full-network-graph','tapNodeData'),
@@ -90,6 +113,11 @@ def register_callbacks(app):
         return None
     
 
+    '''
+    Sync Dropdown with Coreg Grapg:
+    - When a node is selected by clicking on graph, this ensures that node
+    is selected from the dropdown menu
+    '''
     @app.callback(
             Output('coreg-node-selector','value',allow_duplicate=True),
             Input('coreg-network-graph','tapNodeData'),
@@ -100,6 +128,11 @@ def register_callbacks(app):
             return tap_node['id']
         return None
 
+    '''
+    Sync Dropdown with Target Graph:
+    - When a node is selected by clicking on graph, this ensures that node
+    is selected from the dropdown menu
+    '''
     @app.callback(
             Output('target-node-selector','value',allow_duplicate=True),
             Input('target-network-graph','tapNodeData'),
@@ -111,6 +144,11 @@ def register_callbacks(app):
         return None
 
 
+    '''
+    Update highlight for full network:
+    - When a node is selected, that node and its connected nodes/edges are set to highlighted class
+    and all other nodes/edges are given faded class (Classes have specific style in stylesheet.py)
+    '''
     @app.callback(
         Output('full-network-graph', 'elements',allow_duplicate=True),
         Input('full-node-selector', 'value'),
@@ -150,6 +188,11 @@ def register_callbacks(app):
 
         return nodes + edges
     
+    '''
+    Update highlight for coreg network:
+    - When a node is selected, that node and its connected nodes/edges are set to highlighted class
+    and all other nodes/edges are given faded class (Classes have specific style in stylesheet.py)
+    '''
     @app.callback(
         Output('coreg-network-graph', 'elements',allow_duplicate=True),
         Input('coreg-node-selector', 'value'),
@@ -189,6 +232,11 @@ def register_callbacks(app):
 
         return nodes + edges
     
+    '''
+    Update highlight for target network:
+    - When a node is selected, that node and its connected nodes/edges are set to highlighted class
+    and all other nodes/edges are given faded class (Classes have specific style in stylesheet.py)
+    '''
     @app.callback(
         Output('target-network-graph', 'elements',allow_duplicate=True),
         Input('target-node-selector', 'value'),
@@ -228,6 +276,11 @@ def register_callbacks(app):
 
         return nodes + edges
     
+
+    '''
+    Update info panel for full network:
+    - When a node is selected, corresponding info is displayed according to selected tab
+    '''
     @app.callback(
         Output('full-info-content', 'children', allow_duplicate=True),
         Input('full-node-selector', 'value'),
@@ -280,7 +333,11 @@ def register_callbacks(app):
                     html.P([html.B("Activated by: "), ', '.join(acts) if acts else "None"]),
                     html.P([html.B("Repressed by: "), ', '.join(reps) if reps else "None"])
                 ])
-            
+
+    '''
+    Update info panel for coreg network:
+    - When a node is selected, corresponding info is displayed according to selected tab
+    '''    
     @app.callback(
         Output('coreg-info-content', 'children', allow_duplicate=True),
         Input('coreg-node-selector', 'value'),
@@ -327,7 +384,10 @@ def register_callbacks(app):
                     *coregs_output  
                 ])
            
-
+    '''
+    Update info panel for target network:
+    - When a node is selected, corresponding info is displayed according to selected tab
+    '''  
     @app.callback(
         Output('target-info-content', 'children', allow_duplicate=True),
         Input('target-node-selector', 'value'),
@@ -375,7 +435,13 @@ def register_callbacks(app):
                     *coregulated_output 
                 ])
 
-           
+    
+    '''
+    Update Coreg Graph:
+    - After Threshold input, 'update button' should be pressed, this will update graph to only show nodes/edges
+    with the newly defined threshold input. This also takes regard of the selected node, if node doesnt account
+    for threshold, selection will be cleared
+    '''  
     @app.callback(
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
         Output('coreg-network-store', 'data', allow_duplicate=True),
@@ -393,12 +459,24 @@ def register_callbacks(app):
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
-                if selected_node in tf_targets and len(tf_targets[selected_node]) < threshold:
-                    selected_node = ''
+                # if selected_node in tf_targets and len(tf_targets[selected_node]) < threshold:
+                #     selected_node = ''
+                connected=any(
+                    (edge['data']['source']== selected_node or edge['data']['target']==selected_node)
+                    for edge in coreg_net['edges']
+                )
+                if not connected:
+                    selected_node=''
                 return all_elements, all_elements, selected_node  
         return no_update, no_update, no_update
 
 
+    '''
+    Update Target Graph:
+    - After Threshold input, 'update button' should be pressed, this will update graph to only show nodes/edges
+    with the newly defined threshold input. This also takes regard of the selected node, if node doesnt account
+    for threshold, everything will be faded.
+    '''  
     @app.callback(
         [Output('target-network-graph', 'elements', allow_duplicate=True),
         Output('target-network-store', 'data', allow_duplicate=True),
@@ -416,7 +494,13 @@ def register_callbacks(app):
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
-                if selected_node in target_tfs and len(target_tfs[selected_node]) < threshold:
-                    selected_node = ''
+                # if selected_node in target_tfs and len(target_tfs[selected_node]) < threshold:
+                #     selected_node = ''
+                connected=any(
+                    (edge['data']['source']== selected_node or edge['data']['target']==selected_node)
+                    for edge in target_net['edges']
+                )
+                if not connected:
+                    selected_node=''
                 return all_elements, all_elements, selected_node  
         return no_update, no_update, no_update
