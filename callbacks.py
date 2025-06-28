@@ -49,7 +49,7 @@ def register_callbacks(app):
         if n_clicks > 0:
             if grn:
                 tf_targets = get_tf_targets(grn)
-                coreg_net = create_tf_interaction_network(tf_targets, threshold=5)  
+                coreg_net = create_tf_interaction_network(tf_targets)  
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
@@ -69,11 +69,11 @@ def register_callbacks(app):
         if n_clicks > 0:
             if grn:
                 target_tfs = get_target_tfs(grn)
-                target_net = create_coregulated_network(target_tfs, threshold=10)  
+                target_net = create_coregulated_network(target_tfs, threshold=target_thresh)  
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
-                return all_elements, None, 10, all_elements 
+                return all_elements, None, target_thresh, all_elements 
 
         return no_update, None, no_update, no_update
 
@@ -389,7 +389,7 @@ def register_callbacks(app):
         if n_clicks > 0:
             if grn:
                 tf_targets = get_tf_targets(grn)
-                coreg_net = create_tf_interaction_network(tf_targets, threshold or 1)
+                coreg_net = create_tf_interaction_network(tf_targets, threshold)
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
@@ -412,7 +412,7 @@ def register_callbacks(app):
         if n_clicks > 0:
             if grn:
                 target_tfs = get_target_tfs(grn)
-                target_net = create_tf_interaction_network(target_tfs, threshold or 10)
+                target_net = create_tf_interaction_network(target_tfs, threshold)
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:
                     e['classes'] = ''

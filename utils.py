@@ -110,7 +110,7 @@ def get_target_tfs(grn_data):
 
     return target_tfs
 
-def create_coregulated_network(target_tfs,threshold=1):
+def create_coregulated_network(target_tfs,threshold=10):
     # targets=grn_data.get('adjlist').get('bygene').keys()
     targets=list(target_tfs.keys())
     nodes_data=[]
@@ -146,7 +146,7 @@ def create_coregulated_network(target_tfs,threshold=1):
     for target in targets:
         if target in nodes_to_include:
             tf_count=len(target_tfs[target])
-            if tf_count>=10:
+            if tf_count>=threshold:
                 nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'tf'}})
 
     return {'nodes':nodes_data,'edges':edges_data}
@@ -157,11 +157,6 @@ def get_expression_data(filepath,gene):
     return gene_exp
 
 
-# get_expression_data('data/CIT_BLCA_EXP.csv','EEF1A1')
 grn = load_grn_data("data/grn.json")
-# tfs=identify_transcription_factors(grn)
-# tf_targets=get_tf_targets(grn)
-# create_tf_interaction_network(tf_targets)
-# create_full_network(grn)
-# target_tfs=get_target_tfs(grn)
-# target_net=create_coregulated_network(target_tfs,1)
+target_thresh=10 # used for reset target (coregulated) graph
+coreg_thresh=5 # used for reset coreg graph
