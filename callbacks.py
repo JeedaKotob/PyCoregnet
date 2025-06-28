@@ -359,6 +359,7 @@ def register_callbacks(app):
             coreg_net=create_tf_interaction_network(tf_targets)
             edges=coreg_net['edges']
             tf=selected_node
+            target_count=len(tf_targets[tf])
             coregs=[]
             for edge in edges:
                 if edge['data']['shared_count']>=threshold:
@@ -380,6 +381,7 @@ def register_callbacks(app):
             else:
                 return html.Div([
                     html.H4(f"Transcription Factor: {selected_node}"),
+                    html.P(f"{tf}'s target count: {target_count}"),
                     html.P(f"{tf}'s coregulators - shared targets count:"),
                     *coregs_output  
                 ])
@@ -409,6 +411,7 @@ def register_callbacks(app):
         target_net=create_coregulated_network(target_tfs)
         edges=target_net['edges']
         tgt=selected_node
+        coreg_count=len(target_tfs[tgt])
         coregulated=[]
         for edge in edges:
             if edge['data']['shared_count']>=threshold: 
@@ -431,6 +434,7 @@ def register_callbacks(app):
         else:
             return html.Div([
                     html.H4(f"Transcription Factor: {selected_node}"),
+                    html.P(f"{tgt}'s target count: {coreg_count}"),
                     html.P(f"{tgt}'s target - shared transcription factor count:"),
                     *coregulated_output 
                 ])
@@ -475,7 +479,7 @@ def register_callbacks(app):
     Update Target Graph:
     - After Threshold input, 'update button' should be pressed, this will update graph to only show nodes/edges
     with the newly defined threshold input. This also takes regard of the selected node, if node doesnt account
-    for threshold, everything will be faded.
+    for threshold, selection will be cleared.
     '''  
     @app.callback(
         [Output('target-network-graph', 'elements', allow_duplicate=True),
