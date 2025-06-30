@@ -1,7 +1,7 @@
 from dash import html, dcc
 import dash_cytoscape as cyto
 from utils import *
-from stylesheet import full_network_stylesheet, coreg_network_stylesheet, target_network_stylesheet
+from assets.stylesheet import full_network_stylesheet, coreg_network_stylesheet, target_network_stylesheet
 
 cyto.load_extra_layouts() 
 
