@@ -118,7 +118,7 @@ def tab_content(tab_name):
                                 'gravity': 70,
                                 'numIter': 1000
                             },
-                            style={'width': '100%', 'height': '800px'},
+                            style={'width': '100%', 'height': '600px'},
                             elements=all_elements,
                             stylesheet=coreg_network_stylesheet
                         )

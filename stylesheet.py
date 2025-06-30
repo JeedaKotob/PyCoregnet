@@ -21,7 +21,7 @@ full_network_stylesheet = [
     {
         "selector": "node[type='tf']",
         "style": {
-           "background-color":"#4473b8",
+           "background-color":"#66a3ff",
            'shape': 'ellipse',
            'color': 'white',
            'text-outline-color': '#333',
@@ -159,9 +159,9 @@ target_network_stylesheet = [
             'border-width': 1,
             'label': 'data(id)', 
             'text-valign': 'center',
-            'color': 'white',
+            'color': 'black',
             'text-outline-width': 2,
-            'text-outline-color': '#333',
+            'text-outline-color': 'white',
             'width': 'mapData(tf_count, 10, 25, 50, 100)', 
             'height': 'mapData(tf_count, 10, 25, 50, 100)',
             'font-size': 'mapData(tf_count, 10, 25, 8, 30)',
