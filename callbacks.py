@@ -444,7 +444,8 @@ def register_callbacks(app):
     @app.callback(
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
         Output('coreg-network-store', 'data', allow_duplicate=True),
-        Output('coreg-node-selector','value',allow_duplicate=True)],
+        Output('coreg-node-selector','value',allow_duplicate=True),
+        Output('coreg-threshold-input', 'value',allow_duplicate=True)],
         Input('coreg-update-button', 'n_clicks'),
         State('coreg-node-selector','value'),
         State('coreg-threshold-input', 'value'),
@@ -453,6 +454,8 @@ def register_callbacks(app):
     def update_coreg_graph(n_clicks, selected_node, threshold):
         if n_clicks > 0:
             if grn:
+                if threshold is None:
+                    threshold=coreg_thresh
                 coreg_net = create_tf_interaction_network(tf_targets, threshold)
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
@@ -465,8 +468,8 @@ def register_callbacks(app):
                 )
                 if not connected:
                     selected_node=''
-                return all_elements, all_elements, selected_node  
-        return no_update, no_update, no_update
+                return all_elements, all_elements, selected_node, threshold
+        return no_update, no_update, no_update, no_update
 
 
     '''
@@ -478,7 +481,8 @@ def register_callbacks(app):
     @app.callback(
         [Output('target-network-graph', 'elements', allow_duplicate=True),
         Output('target-network-store', 'data', allow_duplicate=True),
-        Output('target-node-selector','value',allow_duplicate=True)],
+        Output('target-node-selector','value',allow_duplicate=True),
+        Output('target-threshold-input', 'value',allow_duplicate=True)],
         Input('target-update-button', 'n_clicks'),
         State('target-node-selector','value'),
         State('target-threshold-input', 'value'),
@@ -487,6 +491,8 @@ def register_callbacks(app):
     def update_target_graph(n_clicks, selected_node, threshold):
         if n_clicks > 0:
             if grn:
+                if threshold is None:
+                    threshold=target_thresh
                 target_net = create_tf_interaction_network(target_tfs, threshold)
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:
@@ -499,5 +505,5 @@ def register_callbacks(app):
                 )
                 if not connected:
                     selected_node=''
-                return all_elements, all_elements, selected_node  
-        return no_update, no_update, no_update
+                return all_elements, all_elements, selected_node, threshold  
+        return no_update, no_update, no_update, no_update
