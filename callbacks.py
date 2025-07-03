@@ -428,8 +428,8 @@ def register_callbacks(app):
                 ])
         else:
             return html.Div([
-                    html.H4(f"Transcription Factor: {selected_node}"),
-                    html.P(f"{tgt}'s target count: {coreg_count}"),
+                    html.H4(f"Target Gene: {selected_node}"),
+                    html.P(f"{tgt}'s TF count: {coreg_count}"),
                     html.P(f"{tgt}'s target - shared transcription factor count:"),
                     *coregulated_output 
                 ])
