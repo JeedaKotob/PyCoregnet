@@ -141,7 +141,7 @@ def tab_content(tab_name):
                         dcc.Input(
                             id='coreg-threshold-input',
                             type='number',
-                            value=5,
+                            value=coreg_threshold,
                             min=1,
                             debounce=True,
                             style={'width': '100px', 'marginBottom': '10px'}
@@ -219,7 +219,7 @@ def tab_content(tab_name):
                         dcc.Input(
                             id='target-threshold-input',
                             type='number',
-                            value=10,
+                            value=target_threshold,
                             min=1,
                             debounce=True,
                             style={'width': '100px', 'marginBottom': '10px'}

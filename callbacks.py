@@ -1,4 +1,4 @@
-from dash import Input, Output, State, html, no_update
+from dash import Input, Output, State, html, no_update, dcc
 from layouts import tab_content, welcome, dashboard_layout, page_shell
 from utils import *
 def register_callbacks(app):
@@ -60,11 +60,11 @@ def register_callbacks(app):
     def reset_coreg_graph_and_dropdown(n_clicks):
         if n_clicks > 0:
             if grn:
-                coreg_net = create_tf_interaction_network(tf_targets,coreg_thresh)  
+                coreg_net = create_tf_interaction_network(tf_targets,coreg_threshold)  
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
-                return all_elements, None, coreg_thresh, all_elements 
+                return all_elements, None, coreg_threshold, all_elements 
 
         return no_update, None, no_update, no_update
     
@@ -85,11 +85,11 @@ def register_callbacks(app):
     def reset_target_graph_and_dropdown(n_clicks):
         if n_clicks > 0:
             if grn:
-                target_net = create_coregulated_network(target_tfs, threshold=target_thresh)  
+                target_net = create_coregulated_network(target_tfs, threshold=target_threshold)  
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:
                     e['classes'] = ''
-                return all_elements, None, target_thresh, all_elements 
+                return all_elements, None, target_threshold, all_elements 
 
         return no_update, None, no_update, no_update
 
@@ -310,12 +310,18 @@ def register_callbacks(app):
 
     
         if selected_tab == 'expression':
-            expression_values = get_expression_data('data/CIT_BLCA_EXP.csv', selected_node)
-            expression_text = ', '.join(f"{val:.2f}" for val in expression_values)
+            # expression_values = get_expression_data('data/CIT_BLCA_EXP.csv', selected_node)
+            # expression_text = ', '.join(f"{val:.2f}" for val in expression_values)
+            # return html.Div([
+            #     html.H4(f"{node_type}: {selected_node}"),
+            #     html.P([html.B("Expression values: "), expression_text])
+            # ])
+            heatmap=get_heat_map('data/CIT_BLCA_EXP.csv', selected_node)
             return html.Div([
                 html.H4(f"{node_type}: {selected_node}"),
-                html.P([html.B("Expression values: "), expression_text])
+                dcc.Graph(figure=heatmap)
             ])
+
         
         else: 
             if node_type == "Transcription Factor":
@@ -455,7 +461,7 @@ def register_callbacks(app):
         if n_clicks > 0:
             if grn:
                 if threshold is None:
-                    threshold=coreg_thresh
+                    threshold=coreg_threshold
                 coreg_net = create_tf_interaction_network(tf_targets, threshold)
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
                 for e in all_elements:
@@ -492,7 +498,7 @@ def register_callbacks(app):
         if n_clicks > 0:
             if grn:
                 if threshold is None:
-                    threshold=target_thresh
+                    threshold=target_threshold
                 target_net = create_tf_interaction_network(target_tfs, threshold)
                 all_elements = target_net['nodes'] + target_net['edges']
                 for e in all_elements:

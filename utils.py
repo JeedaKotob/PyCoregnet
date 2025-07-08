@@ -2,6 +2,8 @@ import json
 from itertools import combinations
 import random
 import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
 
 # --- KInd of our backend codes here ---
 
@@ -25,13 +27,15 @@ def get_tf_targets(grn_data):
 
     return tf_targets
 
-def create_tf_interaction_network(tf_targets, threshold=5):
+def create_tf_interaction_network(tf_targets, threshold=None):
     tfs = list(tf_targets.keys())
     nodes_data = []
     edges_data = []
     edge_ids = set()
-
-    tf_nodes_in_graph = set()
+    if threshold is None:
+        max_targets = max(len(targets) for targets in tf_targets.values())
+        threshold = 0.10 * max_targets
+    # tf_nodes_in_graph = set()
    
     for tf1, tf2 in combinations(tfs, 2):
         targets1 = tf_targets.get(tf1)
@@ -52,18 +56,17 @@ def create_tf_interaction_network(tf_targets, threshold=5):
                     }
                 })
                 edge_ids.add(edge_id)
-                tf_nodes_in_graph.add(tf1)
-                tf_nodes_in_graph.add(tf2)
+                # tf_nodes_in_graph.add(tf1)
+                # tf_nodes_in_graph.add(tf2)
 
     # Add nodes that are part of the graph OR all TFs if graph is empty
   
-    nodes_to_include = tf_nodes_in_graph if edges_data else None
+    # nodes_to_include = tfs
 
     if edges_data: 
         for tf in tfs:
-            if tf in nodes_to_include:
-                target_count = len(tf_targets[tf])
-                nodes_data.append({'data': {'id': tf, 'target_count': target_count, 'type': 'tf'}})
+            target_count = len(tf_targets[tf])
+            nodes_data.append({'data': {'id': tf, 'target_count': target_count, 'type': 'tf'}})
 
     return {'nodes': nodes_data, 'edges': edges_data}
 
@@ -106,14 +109,17 @@ def get_target_tfs(grn_data):
 
     return target_tfs
 
-def create_coregulated_network(target_tfs,threshold=10):
+def create_coregulated_network(target_tfs,threshold=None):
     # targets=grn_data.get('adjlist').get('bygene').keys()
     targets=list(target_tfs.keys())
     nodes_data=[]
     edges_data=[]
     edge_ids=set()
+    if threshold is None:
+        max_tfs = max(len(tfs) for tfs in target_tfs.values())
+        threshold = 0.50 * max_tfs
 
-    target_nodes_in_graph=set()
+    # target_nodes_in_graph=set()
 
     for tgt1,tgt2 in combinations(targets,2):
         tfs1= target_tfs.get(tgt1)
@@ -122,7 +128,7 @@ def create_coregulated_network(target_tfs,threshold=10):
         shared_count = len(shared_tfs)
 
         if shared_count >= threshold:
-            edge_id = tuple(sorted((tgt1,tgt2))) ###CHECKKK ()()
+            edge_id = tuple(sorted((tgt1,tgt2))) 
             if edge_id not in edge_ids:
                 edges_data.append({
                     'data':{
@@ -134,16 +140,15 @@ def create_coregulated_network(target_tfs,threshold=10):
                     }
                 })
                 edge_ids.add(edge_id)
-                target_nodes_in_graph.add(tgt1)
-                target_nodes_in_graph.add(tgt2)
+                # target_nodes_in_graph.add(tgt1)
+                # target_nodes_in_graph.add(tgt2)
 
-    nodes_to_include=target_nodes_in_graph if edges_data else targets
+    # nodes_to_include=target_nodes_in_graph if edges_data else targets
 
     for target in targets:
-        if target in nodes_to_include:
-            tf_count=len(target_tfs[target])
-            if tf_count>=threshold:
-                nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'tf'}})
+        tf_count=len(target_tfs[target])
+        if tf_count>=threshold:
+            nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'tf'}})
 
     return {'nodes':nodes_data,'edges':edges_data}
 
@@ -152,9 +157,56 @@ def get_expression_data(filepath,gene):
     gene_exp=ne.loc[gene].to_list()
     return gene_exp
 
+def normalize(x,zmin,zmax):
+    return (x-zmin)/(zmax-zmin)
+
+
+def get_heat_map(filepath,gene):
+    ne=pd.read_csv(filepath,index_col=0)
+    gene_exp=ne.loc[gene].values
+    mean=np.mean(gene_exp)
+    sd=np.std(gene_exp)
+
+    # z=(x-mean)/sd
+    z_scores=(gene_exp-mean)/sd
+    zmin = z_scores.min()
+    zmax = z_scores.max()
+    # print(zmin,zmax)
+
+    z_scores_df=pd.DataFrame([z_scores],index=[gene],columns=ne.columns)
+
+    heatmap=go.Figure(data=go.Heatmap(
+        z=z_scores_df.values.T,
+        x=z_scores_df.index,
+        y=z_scores_df.columns,
+        zmin=zmin,
+        zmax=zmax,
+        colorscale=[
+            [normalize(zmin,zmin,zmax), "red"],   
+            [normalize(0,zmin,zmax), "black"], 
+            [normalize(zmax,zmin,zmax), "green"]   
+        ]
+    ))
+    # print(normalize(zmin,zmin,zmax)) #0
+    # print(normalize(0,zmin,zmax)) # around 0.5
+    # print(normalize(zmax,zmin,zmax)) #1
+
+    return heatmap
+
+
+    # heatmap.write_html("h.html",auto_open=True)
+
 
 grn = load_grn_data("data/grn.json")
-target_thresh=10 # used for reset target (coregulated) graph
-coreg_thresh=5 # used for reset coreg graph
 target_tfs = get_target_tfs(grn)
 tf_targets=get_tf_targets(grn)
+max_targets = max(len(targets) for targets in tf_targets.values())
+coreg_threshold = int(0.10 * max_targets)
+# coreg_thresh=5 # used for reset coreg graph
+
+max_tfs = max(len(tfs) for tfs in target_tfs.values())
+target_threshold = 0.50 * max_tfs
+# target_threshold=10 # used for reset target (coregulated) graph
+
+
+get_heat_map("data/CIT_BLCA_EXP.csv","A2M")
