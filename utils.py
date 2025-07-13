@@ -163,12 +163,15 @@ def normalize(x,zmin,zmax):
 
 def get_heat_map(filepath,gene):
     ne=pd.read_csv(filepath,index_col=0)
+    num_exp=ne.values
     gene_exp=ne.loc[gene].values
-    mean=np.mean(gene_exp)
-    sd=np.std(gene_exp)
+    # mean=np.mean(gene_exp)
+    mean=np.mean(ne)
+    # sd=np.std(gene_exp)
 
     # z=(x-mean)/sd
-    z_scores=(gene_exp-mean)/sd
+    # z_scores=(gene_exp-mean)/sd
+    z_scores=gene_exp-mean
     zmin = z_scores.min()
     zmax = z_scores.max()
     # print(zmin,zmax)
