@@ -185,9 +185,9 @@ def get_heat_map(filepath,gene):
         zmin=zmin,
         zmax=zmax,
         colorscale=[
-            [normalize(zmin,zmin,zmax), "red"],   
-            [normalize(0,zmin,zmax), "black"], 
-            [normalize(zmax,zmin,zmax), "green"]   
+            [0, "red"],   
+            [0.5, "black"], 
+            [1, "green"]   
         ]
     ))
     # print(normalize(zmin,zmin,zmax)) #0

@@ -58,6 +58,8 @@ def tab_content(tab_name):
                     ]),
 
                     html.Div(className="network-controls", children=[
+                        html.H5(f"Number of nodes: {len(full_net['nodes'])}",id="full-node-count"),
+                        html.H5(f"Number of edges: {len(full_net['edges'])}",id="full-edge-count"),
                         html.Label("Highlight Node:"),
                         dcc.Dropdown(
                             id='full-node-selector',
@@ -125,6 +127,8 @@ def tab_content(tab_name):
                     ]),
 
                     html.Div(className="network-controls",children=[
+                        html.H5(f"Number of nodes: {len(coreg_net['nodes'])}",id="coreg-node-count"),
+                        html.H5(f"Number of edges: {len(coreg_net['edges'])}",id="coreg-edge-count"),
                         html.Label("Highlight TF:"),
                         dcc.Dropdown(
                             id='coreg-node-selector',
@@ -203,6 +207,8 @@ def tab_content(tab_name):
                     ]),
 
                     html.Div(className='network-controls',children=[
+                        html.H5(f"Number of nodes: {len(target_net['nodes'])}",id="target-node-count"),
+                        html.H5(f"Number of edges: {len(target_net['edges'])}",id="target-edge-count"),
                         html.Label("Highlight Target Gene:"),
                         dcc.Dropdown(
                             id='target-node-selector',

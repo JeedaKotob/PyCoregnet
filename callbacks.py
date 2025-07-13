@@ -451,7 +451,8 @@ def register_callbacks(app):
         [Output('coreg-network-graph', 'elements', allow_duplicate=True),
         Output('coreg-network-store', 'data', allow_duplicate=True),
         Output('coreg-node-selector','value',allow_duplicate=True),
-        Output('coreg-threshold-input', 'value',allow_duplicate=True)],
+        Output('coreg-threshold-input', 'value',allow_duplicate=True),
+        Output('coreg-edge-count','children')],
         Input('coreg-update-button', 'n_clicks'),
         State('coreg-node-selector','value'),
         State('coreg-threshold-input', 'value'),
@@ -464,6 +465,7 @@ def register_callbacks(app):
                     threshold=coreg_threshold
                 coreg_net = create_tf_interaction_network(tf_targets, threshold)
                 all_elements = coreg_net['nodes'] + coreg_net['edges']
+                coreg_edge_count=len(coreg_net['edges'])
                 for e in all_elements:
                     e['classes'] = ''
                 # if selected_node in tf_targets and len(tf_targets[selected_node]) < threshold:
@@ -474,7 +476,7 @@ def register_callbacks(app):
                 )
                 if not connected:
                     selected_node=''
-                return all_elements, all_elements, selected_node, threshold
+                return all_elements, all_elements, selected_node, threshold, f"Number of edges: {coreg_edge_count}"
         return no_update, no_update, no_update, no_update
 
 
@@ -488,7 +490,8 @@ def register_callbacks(app):
         [Output('target-network-graph', 'elements', allow_duplicate=True),
         Output('target-network-store', 'data', allow_duplicate=True),
         Output('target-node-selector','value',allow_duplicate=True),
-        Output('target-threshold-input', 'value',allow_duplicate=True)],
+        Output('target-threshold-input', 'value',allow_duplicate=True),
+        Output('target-edge-count','children')],
         Input('target-update-button', 'n_clicks'),
         State('target-node-selector','value'),
         State('target-threshold-input', 'value'),
@@ -501,6 +504,7 @@ def register_callbacks(app):
                     threshold=target_threshold
                 target_net = create_tf_interaction_network(target_tfs, threshold)
                 all_elements = target_net['nodes'] + target_net['edges']
+                target_edge_count=len(target_net['edges'])
                 for e in all_elements:
                     e['classes'] = ''
                 # if selected_node in target_tfs and len(target_tfs[selected_node]) < threshold:
@@ -511,5 +515,5 @@ def register_callbacks(app):
                 )
                 if not connected:
                     selected_node=''
-                return all_elements, all_elements, selected_node, threshold  
+                return all_elements, all_elements, selected_node, threshold, f"Number of edges: {target_edge_count}"
         return no_update, no_update, no_update, no_update
