@@ -52,6 +52,7 @@ def tab_content(tab_name):
                             id='full-network-graph',
                             layout={'name': 'preset', 'fit': True, 'padding': 5},
                             style={'width': '100%', 'height': '800px'},
+                            boxSelectionEnabled=True,  
                             elements=all_elements,
                             stylesheet=full_network_stylesheet
                         )
@@ -70,7 +71,8 @@ def tab_content(tab_name):
                                 }
                                 for node in full_net['nodes']
                             ],
-                            placeholder='Select a node...',
+                            placeholder='Select node(s)...',
+                            multi=True,
                             style={'fontFamily': 'monospace'}  
                         ),
 

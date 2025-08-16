@@ -157,31 +157,28 @@ def get_expression_data(filepath,gene):
     gene_exp=ne.loc[gene].to_list()
     return gene_exp
 
-def normalize(x,zmin,zmax):
-    return (x-zmin)/(zmax-zmin)
 
-
-def get_heat_map(filepath,gene):
+def get_heat_map(filepath,genes):
     ne=pd.read_csv(filepath,index_col=0)
-    num_exp=ne.values
-    gene_exp=ne.loc[gene].values
-    # mean=np.mean(gene_exp)
-    mean=np.mean(ne)
-    # sd=np.std(gene_exp)
+    if isinstance(genes,str):
+        genes=[genes]
 
-    # z=(x-mean)/sd
-    # z_scores=(gene_exp-mean)/sd
-    z_scores=gene_exp-mean
-    zmin = z_scores.min()
-    zmax = z_scores.max()
-    # print(zmin,zmax)
+    selected_df = ne.loc[genes].T
+    global_mean=ne.values.mean()
+    z_scores=selected_df-global_mean
+    zmin = z_scores.min().min()
+    zmax = z_scores.max().max()
 
-    z_scores_df=pd.DataFrame([z_scores],index=[gene],columns=ne.columns)
+    n_genes = len(z_scores.columns)
+    n_samples = len(z_scores.index)
+    
+    heatmap_width = min(1000, max(300, 20 * n_genes))
+    heatmap_height = min(900, max(300, 20 * n_samples))
 
     heatmap=go.Figure(data=go.Heatmap(
-        z=z_scores_df.values.T,
-        x=z_scores_df.index,
-        y=z_scores_df.columns,
+        z=z_scores.values,
+        x=z_scores.columns,
+        y=z_scores.index,
         zmin=zmin,
         zmax=zmax,
         colorscale=[
@@ -190,9 +187,13 @@ def get_heat_map(filepath,gene):
             [1, "green"]   
         ]
     ))
-    # print(normalize(zmin,zmin,zmax)) #0
-    # print(normalize(0,zmin,zmax)) # around 0.5
-    # print(normalize(zmax,zmin,zmax)) #1
+    heatmap.update_layout(
+        xaxis=dict(showticklabels=False),
+        yaxis=dict(showticklabels=False),
+        xaxis_title="Genes",
+        yaxis_title="Samples"
+)
+
 
     return heatmap
 

@@ -101,13 +101,13 @@ def register_callbacks(app):
     '''
     @app.callback(
             Output('full-node-selector','value',allow_duplicate=True),
-            Input('full-network-graph','tapNodeData'),
+            Input('full-network-graph','selectedNodeData'),
             prevent_initial_call=True
     )
-    def sync_dropdown_full_graph(tap_node):
-        if tap_node:
-            return tap_node['id']
-        return None
+    def sync_dropdown_full_graph(selected_nodes):
+        if selected_nodes:
+            return [n['id'] for n in selected_nodes]
+        return []
     
 
     '''
@@ -153,13 +153,18 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
 
-    def update_full_highlights(selected_node, original_elements):
+    def update_full_highlights(selected_nodes, original_elements):
 
         if original_elements is None:
             return no_update
         
-        if not selected_node:
+        if not selected_nodes:
             return original_elements
+        
+        if isinstance(selected_nodes,str):
+            selected_nodes=[selected_nodes]
+
+        selected_set=set(selected_nodes)
 
         nodes = [e.copy() for e in original_elements if 'source' not in e['data']]
         edges = [e.copy() for e in original_elements if 'source' in e['data']]
@@ -168,7 +173,7 @@ def register_callbacks(app):
         for edge in edges:
             src = edge['data']['source']
             tgt = edge['data']['target']
-            if selected_node in (src, tgt):
+            if selected_set & {src, tgt}:
                 edge['classes'] = 'highlighted-edge'
                 connected_nodes.update([src, tgt])
             else:
@@ -176,7 +181,7 @@ def register_callbacks(app):
 
         for node in nodes:
             nid = node['data']['id']
-            if nid == selected_node:
+            if nid in selected_set:
                 node['classes'] = 'highlighted'
             elif nid in connected_nodes:
                 node['classes'] = ''
@@ -279,63 +284,68 @@ def register_callbacks(app):
     - When a node is selected, corresponding info is displayed according to selected tab
     '''
     @app.callback(
-        Output('full-info-content', 'children', allow_duplicate=True),
-        Input('full-node-selector', 'value'),
-        Input('full-info-tabs', 'value'),
-        prevent_initial_call='initial_duplicate'
+    Output('full-info-content', 'children', allow_duplicate=True),
+    Input('full-node-selector', 'value'),
+    Input('full-info-tabs', 'value'),
+    prevent_initial_call='initial_duplicate'
     )
-    def update_full_info_panel(selected_node, selected_tab):
-        if not selected_node:
+    def update_full_info_panel(selected_nodes, selected_tab):
+        if not selected_nodes:
             if selected_tab == 'expression':
-                return html.P("Select a node to view expression.")
+                return html.P("Select node(s) to view expression.")
             else:
-                return html.P("Select a node to view regulation information.")
+                return html.P("Select node(s) to view regulation information.")
 
         if not grn:
             return "Error loading GRN data."
 
+        if isinstance(selected_nodes, str):
+            selected_nodes = [selected_nodes]
+
         bytf = grn['adjlist'].get('bytf', {})
         bygene = grn['adjlist'].get('bygene', {})
 
-        if selected_node in bytf:
-            node_type = "Transcription Factor"
-            acts = bytf[selected_node].get('act', [])
-            reps = bytf[selected_node].get('rep', [])
-        elif selected_node in bygene:
-            node_type = "Target Gene"
-            acts = bygene[selected_node].get('act', [])
-            reps = bygene[selected_node].get('rep', [])
-        else:
-            return html.P("Node not found in GRN data.")
+        info_blocks = []
+        for node in selected_nodes:
+            if node in bytf:
+                node_type = "Transcription Factor"
+                acts = bytf[node].get('act', [])
+                reps = bytf[node].get('rep', [])
+            elif node in bygene:
+                node_type = "Target Gene"
+                acts = bygene[node].get('act', [])
+                reps = bygene[node].get('rep', [])
+            else:
+                info_blocks.append(html.Div([
+                    html.H4(f"{node}"),
+                    html.P("Node not found in GRN data.")
+                ]))
+                continue
 
-    
-        if selected_tab == 'expression':
-            # expression_values = get_expression_data('data/CIT_BLCA_EXP.csv', selected_node)
-            # expression_text = ', '.join(f"{val:.2f}" for val in expression_values)
-            # return html.Div([
-            #     html.H4(f"{node_type}: {selected_node}"),
-            #     html.P([html.B("Expression values: "), expression_text])
-            # ])
-            heatmap=get_heat_map('data/CIT_BLCA_EXP.csv', selected_node)
-            return html.Div([
-                html.H4(f"{node_type}: {selected_node}"),
-                dcc.Graph(figure=heatmap)
-            ])
+            if selected_tab == 'expression':
+                try:
+                    heatmap = get_heat_map('data/CIT_BLCA_EXP.csv', selected_nodes)
+                    return html.Div([
+                    html.H4("Expression heatmap for selected gene(s):"),
+                    dcc.Graph(figure=heatmap)
+                ])
+                except Exception as e:
+                    return html.P("Error loading expression data.")
+            else: 
+                if node_type == "Transcription Factor":
+                    info_blocks.append(html.Div([
+                        html.H4(f"{node_type}: {node}"),
+                        html.P([html.B("Activates: "), ', '.join(acts) if acts else "None"]),
+                        html.P([html.B("Represses: "), ', '.join(reps) if reps else "None"])
+                    ]))
+                else:  
+                    info_blocks.append(html.Div([
+                        html.H4(f"{node_type}: {node}"),
+                        html.P([html.B("Activated by: "), ', '.join(acts) if acts else "None"]),
+                        html.P([html.B("Repressed by: "), ', '.join(reps) if reps else "None"])
+                    ]))
 
-        
-        else: 
-            if node_type == "Transcription Factor":
-                return html.Div([
-                    html.H4(f"{node_type}: {selected_node}"),
-                    html.P([html.B("Activates: "), ', '.join(acts) if acts else "None"]),
-                    html.P([html.B("Represses: "), ', '.join(reps) if reps else "None"])
-                ])
-            else:  
-                return html.Div([
-                    html.H4(f"{node_type}: {selected_node}"),
-                    html.P([html.B("Activated by: "), ', '.join(acts) if acts else "None"]),
-                    html.P([html.B("Repressed by: "), ', '.join(reps) if reps else "None"])
-                ])
+        return html.Div(info_blocks, style={'display': 'flex', 'flexDirection': 'column', 'gap': '20px'})
 
     '''
     Update info panel for coreg network:
