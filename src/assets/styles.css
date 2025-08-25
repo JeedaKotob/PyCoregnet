@@ -1,0 +1,116 @@
+/* The styles present is fro making the dashboard like a desktop app */
+html,body{
+    margin: 0;
+    padding: 0;
+    /* overflow: auto; */
+}
+
+/* Responsible for the App Like Structure */
+/* 
+dash==3.0.4
+dash-bootstrap-components==2.0.3
+dash-testing-stub==0.0.2
+dash_cytoscape==1.0.2
+dash_daq==0.6.0
+*/
+
+.dash-page-container{
+    flex: 1;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+.dash-page-container > div {
+    flex: 1;
+    display: flex;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+#_pages_content{
+    flex: 1;
+    display: flex;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.dash-page-container-child{
+    flex: 1;
+    display: flex;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+
+/* *** BaseGraphModel *** */
+
+
+/* The network-graph wrapper */
+.cyto-graph-wrapper{
+    display: flex;
+
+    padding: 0;
+    margin: 1% 0 1% 1%;
+    width: 75%;
+
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    flex-direction: column;
+}
+
+/* DashTabs / (Regulation vs Expression) Tabs */
+.network-controls{
+    margin: 1rem 0 1rem 1rem;
+    width: 25%;
+    overflow: scroll;
+}
+
+.network-controls-section{
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 1rem;
+    margin-bottom: 1rem;
+
+}
+
+/* *** Styles Fix *** */
+
+.btn-group-items > .form-check {
+    min-height: 0;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+/* restyle radio items */
+.form-check {
+  padding-left: 0;
+}
+
+/* Black Tabs */
+.tabs-black .nav-tabs {
+    border-bottom: 1px solid #000;
+}
+
+.tabs-black .nav-link {
+    color: #000;
+    background-color: transparent;
+    border: none;
+}
+
+.tabs-black .nav-link.active {
+    color: #000;
+    background-color: transparent;
+    border: 1px solid #000;
+    border-bottom: 2px solid #000;
+}
+
+.tabs-black .nav-link:hover {
+    border: 1px solid #000;
+}
