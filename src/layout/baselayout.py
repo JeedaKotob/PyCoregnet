@@ -138,7 +138,10 @@ class BaseNetworkGraph:
         
         # CENTRALIZED STORE SYNC ALL CALLBACKS    
         @app.callback(
-            Output({"type": "main-content", "uid": self.uid}, "children"),
+            [
+                Output({"type": "main-content", "uid": self.uid}, "children"),
+                Output({"type": "threshold", "uid": self.uid}, "value"),
+            ],
             Input({"type": "main-content", "uid": self.uid}, "children"),
             State({"type": "store", "uid": self.uid}, "data"),
         )
@@ -165,6 +168,7 @@ class BaseNetworkGraph:
                     
                 cache.set(uid,graph_data)
 
+            default_threshold = None
             if self.threshold:
                 default_threshold = self.threshold(graph_data)
                 nodes_n_edges = self.create_network(graph_data,default_threshold)          
@@ -182,7 +186,7 @@ class BaseNetworkGraph:
                 layout=self.graph_layout,
             )
             
-            return [children[0], cytoscape_graph]
+            return [children[0], cytoscape_graph] , default_threshold
             
     
         #  SET OPTIONS SYNCED FROM the centralized store (defualt)
@@ -197,6 +201,7 @@ class BaseNetworkGraph:
             prevent_initial_call=True
         )
         def set_dropdown(store,elements):
+            print(store)
             selection_mode = store['selection_mode'] # Either single,off,multiple
 
             if selection_mode == "single":
@@ -207,14 +212,12 @@ class BaseNetworkGraph:
                 return no_update,no_update,True
            
                 
+            nodes = [e.copy() for e in elements if 'source' not in e['data']]
             if self.preprocess:
-                
-                nodes = [e.copy() for e in elements if 'source' not in e['data']]
                 options = self.dropdown_options(
                     nodes
                 )
             else: # Basically Full Bipartite CHANGE if needed
-                nodes = [e.copy() for e in elements if 'source' not in e['data']]
                 options = self.dropdown_options(
                     nodes,
                     store
@@ -222,78 +225,120 @@ class BaseNetworkGraph:
             
             return options,multi,False
 
-        #TODO FIX
         # CENTRALIZED STORE SYNC ALL CALLBACKS
-        # @app.callback(
-        #     [
-        #         Output({"type": "store", "uid": self.uid}, "data"),
-        #         Output({"type": "dropdown", "uid": self.uid}, "value"),
-        #         Output({"type" : "threshold", "uid" : self.uid}, "value")
-        #     ],
-        #     [
-        #         Input({"type": "network-graph", "uid": self.uid}, "tapNodeData"),
-        #         Input({"type": "dropdown", "uid": self.uid}, "value"),
-        #         Input({"type": "selection-mode-btns", "uid": self.uid},"value"), # node mode (Single , Off ,Multiple)
-        #         Input({"type": "filter-mode-btns", "uid": self.uid},"value"), # node type (Targets, both , Tfs)
-        #         Input({"type": "backtracking-mode-btns", "uid": self.uid},"value"), # Allow Backtrack (True/False) 
-        #         Input({"type": "threshold-btn", "uid": self.uid}, "n_clicks"), # Button threshold
-        #     ],
-        #     State({"type" : "threshold", "uid" : self.uid}, "value"), # The Number Input
-        #     State({"type": "store", "uid": self.uid}, "data"),
-        # )
-        # def sync(tapNodeData, dropdown_value,selection_mode,filter_mode,backtracking,threshold_btn,threshold_input, store):
+        @app.callback(
+            [
+            Output({"type": "store", "uid": self.uid}, "data"),
+            Output({"type": "dropdown", "uid": self.uid}, "value"),
+            ],
+            [
+            Input({"type": "network-graph", "uid": self.uid}, "tapNodeData"),
+            Input({"type": "dropdown", "uid": self.uid}, "value"),
+            Input({"type": "selection-mode-btns", "uid": self.uid},"value"), # node mode (Single , Off ,Multiple)
+            Input({"type": "filter-mode-btns", "uid": self.uid},"value"), # node type (Targets, both , Tfs)
+            Input({"type": "backtracking-mode-btns", "uid": self.uid},"value"), # Allow Backtrack (True/False) 
+            Input({"type": "threshold-btn", "uid": self.uid},"n_clicks"), 
+            ],
+            State({"type": "threshold", "uid": self.uid},"value"), # Allow Backtrack (True/False) 
+            State({"type": "store", "uid": self.uid}, "data"),
+            prevent_initial_call=True,
+        )
+        def sync(tapNodeData, dropdown_value,selection_mode,filter_mode,backtracking_mode,threshold_btn,threshold_value,store):
             
-        #     trigger = ctx.triggered_id['type']
-        
-                
-        #     if trigger == "network-graph" and tapNodeData:
-        #         if store['selection_mode'] == 'single':
-        #             sel = tapNodeData['id']
-        #             store["selected"] = [sel]
-        #             return store, sel, no_update
-        #         elif store['selection_mode'] == 'multiple':
-        #             temp = set(store["selected"])
-        #             temp.add(tapNodeData['id'])
-        #             store["selected"] = list(temp)
-        #             return store , store["selected"],no_update
-                    
-        #     if trigger == "dropdown":
-    
-        #         if not dropdown_value:
-        #             store['selected'] = []
-        #             return store , no_update, no_update
-                
-                
-        #         if store['selection_mode'] == 'single':
-        #             store["selected"] = [dropdown_value]
-        #             return store, dropdown_value
-        #         elif store['selection_mode'] == 'multiple':
-        #             temp = set(store['selected'])
-        #             temp.update(dropdown_value)
-                    
-        #             if len(temp) > len(dropdown_value):
-        #                 temp = dropdown_value
-                    
-        #             store['selected'] = list(temp)
-                
-        #             return store, dropdown_value, no_update
-                
-        #     if trigger == "selection-mode-btns":
-        #         store['selection_mode'] = selection_mode
-        #         return store, no_update,no_update
+            trigger = ctx.triggered_id
             
-        #     if trigger == "filter-mode-btns":
-        #         store['filter_mode'] = filter_mode
-        #         return store, no_update,no_update
+            # NOTE : Output of tapNodeData['id'] : str 
+            # NOTE : Input of dropdown_value: str when selection_mode == single
+            # NOTE : Input of dropdown_value: list when filter_mode == multiple
+            # NOTE NOTE NOTE store['selected'] SHOUDL ALWAYS BE TYPE LIST
+            
+            store['selection_mode'] = selection_mode
+            store['filter_mode'] = filter_mode
+            store['backtracking_mode'] = backtracking_mode
+            
+            if trigger == {"type": "network-graph", "uid": self.uid} and tapNodeData:
+                if store['selection_mode'] == 'single':
+                    sel = tapNodeData['id']
+                    store["selected"] = [sel]
+                    return store, sel
+                elif store['selection_mode'] == 'multiple':
+                    temp = set(store["selected"])
+                    temp.add(tapNodeData['id'])
+                    store["selected"] = list(temp)
+                    return store , store["selected"]
+                    
 
-        #     if trigger == "backtracking-mode-btns":
-        #         store['backtracking'] = backtracking
-    
-        #         return store, no_update,no_update
-        
-        #     if trigger == "threshold-btn":
-        #         store['threshold'] = threshold_input
+            if trigger == {"type": "dropdown", "uid": self.uid}:
+                if not dropdown_value:
+                    store['selected'] = []
+                    return store , no_update
+                
+                
+                if store['selection_mode'] == 'single':
+                    store["selected"] = [dropdown_value]
+                    return store, dropdown_value
+                elif store['selection_mode'] == 'multiple':
+                    temp = set(store['selected'])
+                    temp.update(dropdown_value)
+                    
+                    if len(temp) > len(dropdown_value):
+                        temp = dropdown_value
+                    
+                    store['selected'] = list(temp)
+                    
+                
+                    return store, dropdown_value
             
-        #     return no_update,no_update,no_update
+            
+            #  The defualt threshold is never in the store (Dont need?)
+            if trigger == {"type": "threshold-btn", "uid": self.uid}:
+                store['threshold'] = threshold_value
+                return store, no_update
+                
+            return store, no_update
+
+
+
+        @app.callback(
+            Output({"type": "network-graph", "uid": self.uid}, "elements"),
+            Input({"type": "store", "uid": self.uid}, "data"),
+            State({"type": "network-graph", "uid": self.uid}, "elements"),
+            prevent_initial_call=True
+        )
+        def highlightor(store, elements):
+            
+            selected = set(store['selected'])
         
-        
+            if not selected:
+                for d in elements:
+                    d['classes'] = ''
+                return elements
+
+            connected_nodes = set()
+            
+            nodes = [e.copy() for e in elements if 'source' not in e['data']]
+            edges = [e.copy() for e in elements if 'source' in e['data']]
+            # edge = {{'data': {'id': 'SPOCD1->A2ML1', 'source': 'SPOCD1', 'target': 'A2ML1', 'interaction_type': 'Repression'}}
+            for edge in edges:
+                src = edge['data']['source']
+                tgt = edge['data']['target']        
+                if selected & {src, tgt}:
+                    edge['classes'] = "highlighted-edge"
+                    connected_nodes.update([src, tgt])
+                else:
+                    edge['classes'] = "faded"
+                    
+            
+            # node = {'data': {'id': 'A2ML1', 'type': 'target'}, 'position': {'x': 2735, 'y': 194}}
+            for node in nodes:
+                nid = node['data']['id']
+                if nid in selected:
+                    node['classes'] = 'highlighted'
+                elif nid in connected_nodes:
+                    node['classes'] = ''
+                else:
+                    node['classes'] = 'faded'
+            
+            elements = nodes + edges    
+            
+            return elements
