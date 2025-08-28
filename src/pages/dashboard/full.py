@@ -1,7 +1,11 @@
+from functools import partial
+
 import dash
 from layout.baselayout import BaseNetworkGraph
 from graph import fullbipartite
 from assets import stylesheet
+
+import utils
 
 dash.register_page(__name__, path='/dashboard/full')
 
@@ -20,12 +24,18 @@ store = {
     },
 }
 
+
+
 app_layout = BaseNetworkGraph(
     store = store,
     create_network=fullbipartite.create_network,
     stylesheet=stylesheet.full_network_stylesheet,
     graph_layout=fullbipartite.layout,
     dropdown_options=fullbipartite.options,
+    content={
+        "Regulation" : partial(fullbipartite.regulation,grn_path="./grn.json"),
+        "Expression" : partial(fullbipartite.get_heat_map,filepath="./CIT_BLCA_EXP.csv"),
+    }
 )
 
 layout = app_layout.get_layout()

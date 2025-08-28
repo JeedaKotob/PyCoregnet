@@ -6,7 +6,8 @@ from dash import dcc
 def tabs(id: str, options: list, value: str):
     return dbc.Tabs(
         id=id,
-        active_tab=value,
+        # active_tab=value,
+        active_tab=options[0]['tab_id'], #The active tab is the first element of the options list
         className="justify-content-center text-black border-0",
         children=[
             dbc.Tab(
@@ -94,21 +95,18 @@ def stat_card():
             ])
 
 
-
-
-def stat_box():
-
-    # def cell(text,number):
-    def cell(text,number):
+    
+def stat_box(stats: list):
+    def cell(text,id):
 
         return dbc.Col([
             dbc.Row([
             dbc.Col([html.Small(text, className="text-center text-muted fw-bold")], width=6, className="d-flex justify-content-center align-items-center"),
-            dbc.Col([html.Div([number], className="p-2 bg-secondary text-center text-white rounded fw-bold")], width=6, className="d-flex justify-content-center align-items-center"),
+            dbc.Col([html.Div(id=id, className="p-2 bg-secondary text-center text-white rounded fw-bold")], width=6, className="d-flex justify-content-center align-items-center"),
             ])
         ], width=6, className="d-flex justify-content-center align-items-center")
     
     return dbc.Row([
-        cell("Total Nodes", "930"),
-        cell("Total Edges", "7902")
+        cell(stat["name"], stat["id"]) for stat in stats
     ])
+    

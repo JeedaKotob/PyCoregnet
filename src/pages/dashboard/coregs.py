@@ -34,6 +34,7 @@ graph_layout={
     'numIter': 1000
 }
 
+
 app_layout = BaseNetworkGraph(
     store=store,
     preprocess=partial(adj.get_entity_partners,key="bytf"),
@@ -41,7 +42,17 @@ app_layout = BaseNetworkGraph(
     stylesheet=stylesheet.coreg_network_stylesheet,
     graph_layout=graph_layout,
     dropdown_options=adj.options,
-    threshold=partial(adj.default_threshold,threshold = 0.1)
+    threshold=partial(adj.default_threshold,threshold = 0.1),
+    content={
+        "Regulation" : partial(adj.by_update_info_panel,columns=
+                                                            [
+                                                                {"name": "TF", "id": "Node"},
+                                                                {"name": "CO", "id": "shared"},
+                                                                {"name": "STC", "id": "count"},
+                                                            ]
+        ),
+        "TF Actvity" : None
+    }
 )
 
 layout = app_layout.get_layout()

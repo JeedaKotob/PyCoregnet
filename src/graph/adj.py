@@ -1,4 +1,6 @@
 from itertools import combinations
+from components.backend import table
+
 
 def get_entity_partners(grn_data : dict, key:str):
     entity_partners = {}
@@ -67,3 +69,32 @@ def create_network(entity_to_partners, threshold=None):
 
 def options(entity_to_partners):
     return [{'label': n['data']['id'], 'value': n['data']['id']} for n in entity_to_partners]
+
+
+def by_update_info_panel(connections, selected_nodes, edges, threshold, columns):
+
+    for by in selected_nodes:
+
+        target_count = len(connections[by])
+        results = []
+        for edge in edges:
+            if edge['data']['shared_count'] >= threshold:
+                src = edge['data']['source']
+                tgt = edge['data']['target']
+                if by == src or by == tgt:
+                    results.append(edge['data'])
+        results = sorted(results, key=lambda x: x['shared_count'], reverse=True)
+        
+        data = []
+        for co in results:
+            coreg = co['target'] if by == co['source'] else co['source']
+            data.append({"Node" : f"{by} {(target_count)}", "shared" : coreg, "count" : co['shared_count'] })
+
+
+    return table(
+        id="",
+        data=data,
+        columns=columns
+    )
+    
+

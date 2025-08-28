@@ -43,10 +43,25 @@ app_layout = BaseNetworkGraph(
     stylesheet=stylesheet.coreg_network_stylesheet,
     graph_layout=graph_layout,
     dropdown_options=adj.options,
-    threshold=partial(adj.default_threshold,threshold = 0.5)
+    threshold=partial(adj.default_threshold,threshold = 0.5),
+    content={
+        "Regulation" : partial(adj.by_update_info_panel,columns=
+                                                            [
+                                                                {"name": "TG", "id": "Node"},
+                                                                {"name": "TF", "id": "shared"},
+                                                                {"name": "STFC", "id": "count"},
+                                                            ]
+        ),
+        "GRN" : None,
+    }
 )
 
 layout = app_layout.get_layout()
 app_layout.register_callbacks(dash.get_app())
 
 
+{
+    "Node" : "TG",
+    "Shared" : "TF",
+    "Count" : "STFC",
+}

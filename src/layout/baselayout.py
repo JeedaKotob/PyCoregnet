@@ -7,6 +7,9 @@ cyto.load_extra_layouts()
 
 from components.ui import tabs, button_group,stat_box,threshold_input
 
+total_nodes=total_edges=threshold=0
+
+
 class BaseNetworkGraph:
     def __init__(
         self,
@@ -16,7 +19,9 @@ class BaseNetworkGraph:
         stylesheet=None,
         graph_layout=None,
         dropdown_options = None,
-        threshold = None
+        threshold = None,
+        content = None,
+        
         ):
         
         self.store = store
@@ -29,6 +34,7 @@ class BaseNetworkGraph:
         
         self.dropdown_options = dropdown_options
         self.threshold = threshold
+        self.content = content
 
         
         
@@ -76,8 +82,14 @@ class BaseNetworkGraph:
                                     
                                     dbc.Card(className="mb-2",children=[
                                         dbc.CardHeader("Network stats"),
-                                        dbc.CardBody(stat_box()),
-                                        dbc.CardBody(stat_box()),
+                                        dbc.CardBody(stat_box(stats=[
+                                            {"name" : "Total Nodes", "id" : {"type": "total_nodes", "uid": self.uid}},
+                                            {"name" : "Total Edges", "id" : {"type": "total_edges", "uid": self.uid}}
+                                            ])),
+                                        dbc.CardBody(stat_box(stats=[
+                                            {"name" : "Selected Nodes", "id" : {"type": "selected_nodes", "uid": self.uid}},
+                                            {"name" : "Selected Edges", "id" : {"type": "selected_edges", "uid": self.uid}}
+                                            ])),
                                     ]),
                                     
                                     
@@ -111,9 +123,9 @@ class BaseNetworkGraph:
                                             dbc.Row(dcc.Dropdown(id={"type" : "dropdown", "uid" : self.uid},className="mb-2")),
                                             tabs(id={"type": "inspector-table", "uid": self.uid},
                                                 options=[
-                                                    {'label': 'Regulation', 'tab_id': 'Regulation'},
-                                                    {'label': 'Expression', 'tab_id': 'Expression'},
-                                                ],value="Regulation"),
+                                                    { "label":key, "tab_id" : key.lower()} for key in self.content.keys()
+                                                    ],value=None),
+                                            dbc.Row(id={"type": "content", "uid": self.uid},className="d-flex",style={'height': '50vh'})
                                         ]),
                                         # dbc.Row(html.H2("Please Select A Node"))
                                         
@@ -143,11 +155,13 @@ class BaseNetworkGraph:
                 Output({"type": "threshold", "uid": self.uid}, "value"),
             ],
             Input({"type": "main-content", "uid": self.uid}, "children"),
-            State({"type": "store", "uid": self.uid}, "data"),
+            Input({"type": "threshold-btn", "uid": self.uid},"n_clicks"), 
+            State({"type": "threshold", "uid": self.uid},"value"), # Allow Backtrack (True/False) 
         )
-        def load_graph(children : list, store : dict):
+        def load_graph(children : list, threshold_btn , n_threshold ):
 
             uid = self.uid
+            global threshold, total_nodes, total_edges
             
             from dash import get_app
             app = get_app()
@@ -168,14 +182,27 @@ class BaseNetworkGraph:
                     
                 cache.set(uid,graph_data)
 
-            default_threshold = None
+            threshold = None
             if self.threshold:
-                default_threshold = self.threshold(graph_data)
-                nodes_n_edges = self.create_network(graph_data,default_threshold)          
+                
+                
+                if threshold_btn is not None and threshold_btn > 0:
+                    threshold = n_threshold
+                else:
+                    threshold = self.threshold(graph_data)
+                
+                nodes_n_edges = self.create_network(graph_data,threshold)          
                 elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']            
+                total_nodes= len(nodes_n_edges['nodes'])
+                total_edges = len(nodes_n_edges['edges'])
             else:
-                elements = graph_data['nodes'] + graph_data['edges']            
+                elements = graph_data['nodes'] + graph_data['edges']     
+                total_nodes=len(graph_data['nodes'])      
+                total_edges=len(graph_data['edges'])      
                             
+                            
+                
+                
             cytoscape_graph = cyto.Cytoscape(
                 id={"type": "network-graph", "uid": uid},
                 style={'flex-grow': '1', 'box-sizing': 'border-box'},
@@ -186,7 +213,7 @@ class BaseNetworkGraph:
                 layout=self.graph_layout,
             )
             
-            return [children[0], cytoscape_graph] , default_threshold
+            return [children[0], cytoscape_graph] , threshold
             
     
         #  SET OPTIONS SYNCED FROM the centralized store (defualt)
@@ -201,7 +228,7 @@ class BaseNetworkGraph:
             prevent_initial_call=True
         )
         def set_dropdown(store,elements):
-            print(store)
+            
             selection_mode = store['selection_mode'] # Either single,off,multiple
 
             if selection_mode == "single":
@@ -218,6 +245,7 @@ class BaseNetworkGraph:
                     nodes
                 )
             else: # Basically Full Bipartite CHANGE if needed
+
                 options = self.dropdown_options(
                     nodes,
                     store
@@ -244,13 +272,16 @@ class BaseNetworkGraph:
             prevent_initial_call=True,
         )
         def sync(tapNodeData, dropdown_value,selection_mode,filter_mode,backtracking_mode,threshold_btn,threshold_value,store):
-            
+
             trigger = ctx.triggered_id
             
             # NOTE : Output of tapNodeData['id'] : str 
             # NOTE : Input of dropdown_value: str when selection_mode == single
             # NOTE : Input of dropdown_value: list when filter_mode == multiple
             # NOTE NOTE NOTE store['selected'] SHOUDL ALWAYS BE TYPE LIST
+            store['metadata']['total_nodes'] = total_nodes # Global
+            store['metadata']['total_edges'] = total_edges # Global
+            store['threshold'] = threshold # Global
             
             store['selection_mode'] = selection_mode
             store['filter_mode'] = filter_mode
@@ -266,7 +297,7 @@ class BaseNetworkGraph:
                     temp.add(tapNodeData['id'])
                     store["selected"] = list(temp)
                     return store , store["selected"]
-                    
+            
 
             if trigger == {"type": "dropdown", "uid": self.uid}:
                 if not dropdown_value:
@@ -342,3 +373,75 @@ class BaseNetworkGraph:
             elements = nodes + edges    
             
             return elements
+              
+
+        @app.callback(
+            Output({"type": "content", "uid": self.uid}, "children"),
+            Input({"type": "store", "uid": self.uid}, "data"),
+            Input({"type": "inspector-table", "uid": self.uid}, "active_tab"),
+            State({"type": "network-graph", "uid": self.uid}, "elements"),
+            prevent_initial_call=True
+
+        )
+        def update_inspector(store, active_tab, elements):
+            
+            selected = store['selected']
+            threshold = store['threshold']
+            
+            if not selected:
+                return no_update
+            
+            if self.preprocess : 
+                edges = [e.copy() for e in elements if 'source' in e['data']]
+                
+                uid = self.uid
+                from dash import get_app
+                app = get_app()
+                cache = app.server.config["APP_CACHE"]
+                graph_data = cache.get(uid)
+                            
+                return self.content[active_tab.capitalize()](graph_data, selected, edges,threshold)
+                
+            else:
+                if active_tab and store['selected']:
+                    return self.content[active_tab.capitalize()](store['selected'])
+                
+            return no_update
+        
+        
+        @app.callback(
+            [
+                Output({"type": "total_nodes", "uid": self.uid}, "children"),
+                Output({"type": "total_edges", "uid": self.uid}, "children"),
+                Output({"type": "selected_nodes", "uid": self.uid}, "children"),
+                Output({"type": "selected_edges", "uid": self.uid}, "children"),
+            ],
+            Input({"type": "store", "uid": self.uid}, "data"),
+            State({"type": "network-graph", "uid": self.uid}, "elements"),
+            prevent_initial_call=True
+        )
+        def network_stats(store, elements):
+            selected = store['selected']
+            metadata = store['metadata']    
+            total_nodes = metadata['total_nodes']
+            total_edges = metadata['total_edges']
+            len_selected_nodes = len(selected)
+            
+            edges = [e.copy() for e in elements if 'source' in e['data']]
+
+            selected_edges = []
+            for e in edges:
+                
+                edge = e['data']['source']
+                
+                if edge in selected:
+                    selected_edges.append(edge)
+                            
+            return total_nodes,total_edges,len_selected_nodes,len(selected_edges)
+        
+        
+
+        
+            
+        
+            
