@@ -40,7 +40,7 @@ app_layout = BaseNetworkGraph(
     store=store,
     preprocess=partial(adj.get_entity_partners,key="bygene"),
     create_network=adj.create_network, 
-    stylesheet=stylesheet.coreg_network_stylesheet,
+    stylesheet=stylesheet.target_network_stylesheet,
     graph_layout=graph_layout,
     dropdown_options=adj.options,
     threshold=partial(adj.default_threshold,threshold = 0.5),

@@ -53,7 +53,7 @@ def create_network(entity_to_partners, threshold=None):
                 edge_ids.add(edge_id)
                 entities_in_graph.update([entity1, entity2])
 
-    nodes_to_include = entities_in_graph if edges_data else entities
+    nodes_to_include = entities
 
     for entity in nodes_to_include:
         partner_count = len(entity_to_partners.get(entity, []))
