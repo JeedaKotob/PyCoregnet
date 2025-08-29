@@ -12,7 +12,7 @@ store = {
     "selected" : [], 
     "selection_mode" : "single",
     "filter_mode" : None,
-    "backtracking" : False,
+    "backtracking" : None,
     "threshold" : 0,
     "metadata" :{
         "total_nodes" : 0,
