@@ -15,7 +15,7 @@ store = {
     "selection_mode" : "single", # Either single, off, multiple, if None then not included in layout
     "filter_mode" : "both", # Either Target, Both, TF if None then not included in layout
     "backtracking" : False, # Either True, False if None then not included in layout
-    "threshold" : 0, # Always 0 if None then not included in layout
+    "threshold" : None, # Always 0 if None then not included in layout
     "metadata" :{
         "total_nodes" : 0,
         "total_edges" : 0,

@@ -22,12 +22,12 @@ def tabs(id: str, options: list, value: str):
     
     
 
-def button_group(id: str, label: str, options: list, value: str):
+def button_group(id: str, label: str, options: list, value: str, visible = True):
 
     return dbc.Row(
         [
             dbc.Col(
-                dbc.Label(label, className="small text-center"),width="auto"
+                dbc.Label(label, className="small text-center "),width="auto"
             ),
             dbc.Col(
                 dbc.RadioItems(
@@ -44,17 +44,17 @@ def button_group(id: str, label: str, options: list, value: str):
         ],
         justify="between",
         align="center",
-        className="mb-3"
+        className="mb-3" if visible else "d-none"
     )
 
-def threshold_input(id: str, label: str):
+def threshold_input(id: str, label: str, visible=True):
     btn_id = {}
     btn_id["type"]  = f"{id["type"]}-btn"
     btn_id['uid'] = id['uid']
     return dbc.Row([
         dbc.Col(dbc.Input(id=id, type='number', value=label, min=1,size="sm", placeholder=label), width=5),
         dbc.Col(dbc.Button(["Update Threshold"], id=btn_id, size="sm", color="outline-primary"), width="auto"),
-    ], align="center", justify="between", className="mb-3" )
+    ], align="center", justify="between", className="mb-3" if visible else "d-none")
 
 
 def stat_card():

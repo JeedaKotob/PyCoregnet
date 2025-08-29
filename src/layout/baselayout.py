@@ -48,6 +48,17 @@ class BaseNetworkGraph:
             ],
         )
 
+        def check(key, store = self.store):
+            if store[key]:
+                return True
+            elif store[key] == 0:
+                return True
+            else: 
+                return False
+        
+        
+
+
         layout = dbc.Container(
                 fluid=True,
                 className="p-0 m-0 h-100",
@@ -101,19 +112,19 @@ class BaseNetworkGraph:
                                                         {'label': 'Single', 'value': 'single'},
                                                         {'label': 'off', 'value': 'off'},
                                                         {'label': 'Multiple', 'value': 'multiple'},
-                                                    ]),
+                                                    ],visible=check("selection_mode")),
                                                 button_group(id={"type" : "filter-mode-btns", "uid" : self.uid},label="Filter By", value="both",
                                                     options=[
                                                         {'label': 'Target', 'value': 'target'},
                                                         {'label': 'Both', 'value': 'both'},
                                                         {'label': 'TF', 'value': 'tf'},
-                                                    ]),
+                                                    ],visible=check("filter_mode")),
                                                 button_group(id={"type" : "backtracking-mode-btns", "uid" : self.uid}, label="Backtracking", value="False",
                                                     options=[
                                                         {'label': 'On', 'value': 'True'},
                                                         {'label': 'Off', 'value': 'False'},
-                                                    ]),
-                                                threshold_input(id={"type" : "threshold", "uid" : self.uid},label="Threshold"),                                        
+                                                    ],visible=check("backtracking")),
+                                                threshold_input(id={"type" : "threshold", "uid" : self.uid},label="Threshold",visible=check("threshold")),                                        
                                                 ])]),
                                     
                                     dbc.Card(className="mb-2",children=[

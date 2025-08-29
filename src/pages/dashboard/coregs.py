@@ -11,9 +11,9 @@ store = {
     "graph" : "coregulator", # Either fullnetwork, coregnetwork, targetnetwork
     "selected" : [], 
     "selection_mode" : "single",
-    "filter_mode" : "both",
+    "filter_mode" : None,
     "backtracking" : False,
-    "threshold" : None,
+    "threshold" : 0,
     "metadata" :{
         "total_nodes" : 0,
         "total_edges" : 0,
