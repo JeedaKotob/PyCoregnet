@@ -201,7 +201,12 @@ class BaseNetworkGraph:
                 if threshold_btn is not None and threshold_btn > 0:
                     threshold = n_threshold
                     if n_threshold is None or n_threshold==0:
-                        threshold = adj.default_threshold(graph_data, threshold=0.1)
+                        print(self.uid)
+                        if self.uid=='coregulator':
+                            thres=0.1
+                        else:
+                            thres=0.5
+                        threshold = adj.default_threshold(graph_data, threshold=thres)
                         print(threshold)
                 else:
                     threshold = self.threshold(graph_data)
