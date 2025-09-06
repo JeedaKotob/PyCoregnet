@@ -3,6 +3,8 @@ from dash import Dash, dcc, html, Input, Output, State, callback, no_update, cal
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 import pandas as pd
+from functools import partial
+from graph import adj
 cyto.load_extra_layouts()
 
 from components.ui import tabs, button_group,stat_box,threshold_input
@@ -143,8 +145,8 @@ class BaseNetworkGraph:
                                     ]),                        
                                     
                                     dbc.Row(className="mb-2",children=[
-                                        dbc.Col(dbc.Button("Reset Graph", id={"type": "full-reset-button", "uid": self.uid}, outline=True, color="secondary", className="me-1 w-100 text-primary bg-white"),width=6),
-                                        dbc.Col(dbc.Button("Reset All", id={"type": "full-reset-button-2", "uid": self.uid}, outline=True, color="secondary", className="me-1 w-100 text-primary bg-white"),width=6),
+                                        dbc.Col(dbc.Button("Reset Graph", id={"type": "reset-button", "uid": self.uid}, outline=True, color="secondary", className="me-1 w-100 text-primary bg-white"),width=6),
+                                        dbc.Col(dbc.Button("Reset All", id={"type": "reset-button-2", "uid": self.uid}, outline=True, color="secondary", className="me-1 w-100 text-primary bg-white"),width=6),
                                     ]),
                                     
                                     dbc.Row(style={'height': '50vh'})
@@ -193,12 +195,14 @@ class BaseNetworkGraph:
                     
                 cache.set(uid,graph_data)
 
-            threshold = None
             if self.threshold:
                 
                 
                 if threshold_btn is not None and threshold_btn > 0:
                     threshold = n_threshold
+                    if n_threshold is None or n_threshold==0:
+                        threshold = adj.default_threshold(graph_data, threshold=0.1)
+                        print(threshold)
                 else:
                     threshold = self.threshold(graph_data)
                 
@@ -292,7 +296,7 @@ class BaseNetworkGraph:
             # NOTE NOTE NOTE store['selected'] SHOUDL ALWAYS BE TYPE LIST
             store['metadata']['total_nodes'] = total_nodes # Global
             store['metadata']['total_edges'] = total_edges # Global
-            store['threshold'] = threshold # Global
+            # store['threshold'] = threshold # Global
             
             store['selection_mode'] = selection_mode
             store['filter_mode'] = filter_mode
@@ -352,9 +356,7 @@ class BaseNetworkGraph:
             selected = set(store['selected'])
         
             if not selected:
-                for d in elements:
-                    d['classes'] = ''
-                return elements
+                return no_update
 
             connected_nodes = set()
             
