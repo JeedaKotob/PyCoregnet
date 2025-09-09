@@ -468,10 +468,6 @@ class BaseNetworkGraph:
                 uid=self.uid
                 app = get_app()
                 cache = app.server.config["APP_CACHE"]
-                
-                # The graph_data is specific to the graph
-                # If full then save graph_data {graph_net['nodes'] , graph_net['edges']}
-                # If targets,tf then save targets,tfs not {graph_net['nodes'] , graph_net['edges']}
                 graph_data = cache.get(uid)
                 if self.uid=='coregulator':
                     thres=0.1
@@ -479,7 +475,8 @@ class BaseNetworkGraph:
                     thres=0.5
                 threshold = adj.default_threshold(graph_data, threshold=thres)
                 nodes_n_edges = self.create_network(graph_data,threshold)          
-                elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']            
+                elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']    
+                global total_nodes, total_edges        
                 total_nodes= len(nodes_n_edges['nodes'])
                 total_edges = len(nodes_n_edges['edges'])
                 for e in elements:
