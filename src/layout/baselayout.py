@@ -4,7 +4,8 @@ import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 import pandas as pd
 from functools import partial
-from graph import adj
+from graph import adj as adj
+from graph import fullbipartite as full
 cyto.load_extra_layouts()
 
 from components.ui import tabs, button_group,stat_box,threshold_input
@@ -191,7 +192,7 @@ class BaseNetworkGraph:
                 if self.preprocess:
                     graph_data = self.preprocess(utils.grn) # cache this not the elements 
                 else:
-                    graph_data = self.create_network(utils.grn)
+                    graph_data , threshold= self.create_network(utils.grn)
                     
                 cache.set(uid,graph_data)
 
@@ -209,7 +210,7 @@ class BaseNetworkGraph:
                 else:
                     threshold = self.threshold(graph_data)
                 
-                nodes_n_edges = self.create_network(graph_data,threshold)          
+                nodes_n_edges,threshold = self.create_network(graph_data,threshold)          
                 elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']            
                 total_nodes= len(nodes_n_edges['nodes'])
                 total_edges = len(nodes_n_edges['edges'])
@@ -469,12 +470,11 @@ class BaseNetworkGraph:
                 app = get_app()
                 cache = app.server.config["APP_CACHE"]
                 graph_data = cache.get(uid)
-                if self.uid=='coregulator':
-                    thres=0.1
+                if self.uid=="fullbipartite":
+                    import utils
+                    nodes_n_edges,threshold = self.create_network(utils.grn)  
                 else:
-                    thres=0.5
-                threshold = adj.default_threshold(graph_data, threshold=thres)
-                nodes_n_edges = self.create_network(graph_data,threshold)          
+                    nodes_n_edges,threshold = self.create_network(entity_to_partners=graph_data,uid=uid)       
                 elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']    
                 global total_nodes, total_edges        
                 total_nodes= len(nodes_n_edges['nodes'])

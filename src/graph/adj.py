@@ -20,7 +20,7 @@ def default_threshold(connections : dict, threshold : float):
     return coreg_threshold
 
 
-def create_network(entity_to_partners, threshold=None):
+def create_network(entity_to_partners, threshold=None, uid=None):
     entities = list(entity_to_partners.keys())
     nodes_data = []
     edges_data = []
@@ -29,6 +29,12 @@ def create_network(entity_to_partners, threshold=None):
     # if threshold is None:
     #     max_partners = max((len(partners) for partners in entity_to_partners.values()), default=1)
     #     threshold = 0.50 * max_partners
+
+    if threshold is None:
+        if uid=='coregulator':
+            threshold = default_threshold(entity_to_partners, threshold=0.1)
+        else:
+            threshold = default_threshold(entity_to_partners, threshold=0.5)
 
     entities_in_graph = set()
 
@@ -65,7 +71,7 @@ def create_network(entity_to_partners, threshold=None):
             }
         })
 
-    return {'nodes': nodes_data, 'edges': edges_data}
+    return {'nodes': nodes_data, 'edges': edges_data},threshold
 
 def options(entity_to_partners):
     return [{'label': n['data']['id'], 'value': n['data']['id']} for n in entity_to_partners]

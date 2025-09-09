@@ -33,8 +33,10 @@ def create_network(grn_data):
             'data': {'id': tgt, 'type': 'target'},
             'position': {'x': random.randint(1000, 4000), 'y': random.randint(50, 2500)}
         })
+
+    threshold=None
     
-    return {'nodes': nodes, 'edges': edges}
+    return {'nodes': nodes, 'edges': edges},threshold
 
 def options(graph_net, store):
 
