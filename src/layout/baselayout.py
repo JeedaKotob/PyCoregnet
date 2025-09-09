@@ -201,13 +201,11 @@ class BaseNetworkGraph:
                 if threshold_btn is not None and threshold_btn > 0:
                     threshold = n_threshold
                     if n_threshold is None or n_threshold==0:
-                        print(self.uid)
                         if self.uid=='coregulator':
                             thres=0.1
                         else:
                             thres=0.5
                         threshold = adj.default_threshold(graph_data, threshold=thres)
-                        print(threshold)
                 else:
                     threshold = self.threshold(graph_data)
                 
@@ -457,9 +455,38 @@ class BaseNetworkGraph:
                             
             return total_nodes,total_edges,len_selected_nodes,len(selected_edges)
         
+        @app.callback(
+            Output({"type": "dropdown", "uid": self.uid}, "value",allow_duplicate=True),
+            Output({"type": "network-graph", "uid": self.uid}, "elements",allow_duplicate=True),
+            Output({"type": "threshold", "uid": self.uid}, "value",allow_duplicate=True),
+            Input({"type":"reset-button","uid":self.uid},"n_clicks"),
+            prevent_initial_call=True
+        )
+        def reset_graph(n_clicks):
+            if n_clicks>0:
+                from dash import get_app
+                uid=self.uid
+                app = get_app()
+                cache = app.server.config["APP_CACHE"]
+                
+                # The graph_data is specific to the graph
+                # If full then save graph_data {graph_net['nodes'] , graph_net['edges']}
+                # If targets,tf then save targets,tfs not {graph_net['nodes'] , graph_net['edges']}
+                graph_data = cache.get(uid)
+                if self.uid=='coregulator':
+                    thres=0.1
+                else:
+                    thres=0.5
+                threshold = adj.default_threshold(graph_data, threshold=thres)
+                nodes_n_edges = self.create_network(graph_data,threshold)          
+                elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']            
+                total_nodes= len(nodes_n_edges['nodes'])
+                total_edges = len(nodes_n_edges['edges'])
+                for e in elements:
+                    e['classes']=''
+                return None,elements,threshold
+            return None,no_update,no_update
         
-
-        
-            
+    
         
             
