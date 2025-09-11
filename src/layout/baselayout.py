@@ -356,8 +356,10 @@ class BaseNetworkGraph:
             selected = set(store['selected'])
         
             if not selected:
-                return no_update
-
+                for d in elements:
+                    d['classes'] = ''
+                return elements
+                
             connected_nodes = set()
             
             nodes = [e.copy() for e in elements if 'source' not in e['data']]
