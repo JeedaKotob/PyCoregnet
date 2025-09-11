@@ -192,7 +192,7 @@ class BaseNetworkGraph:
                 if self.preprocess:
                     graph_data = self.preprocess(utils.grn) # cache this not the elements 
                 else:
-                    graph_data , threshold= self.create_network(utils.grn)
+                    graph_data , _= self.create_network(utils.grn)
                     
                 cache.set(uid,graph_data)
 
@@ -202,15 +202,11 @@ class BaseNetworkGraph:
                 if threshold_btn is not None and threshold_btn > 0:
                     threshold = n_threshold
                     if n_threshold is None or n_threshold==0:
-                        if self.uid=='coregulator':
-                            thres=0.1
-                        else:
-                            thres=0.5
-                        threshold = adj.default_threshold(graph_data, threshold=thres)
+                        threshold=None
                 else:
                     threshold = self.threshold(graph_data)
                 
-                nodes_n_edges,threshold = self.create_network(graph_data,threshold)          
+                nodes_n_edges,_= self.create_network(graph_data,threshold)          
                 elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']            
                 total_nodes= len(nodes_n_edges['nodes'])
                 total_edges = len(nodes_n_edges['edges'])
