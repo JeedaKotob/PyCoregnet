@@ -14,7 +14,12 @@ def get_entity_partners(grn_data : dict, key:str):
     return entity_partners
 
 
-def default_threshold(connections : dict, threshold : float):
+def default_threshold(connections : dict,threshold:float = None, uid:str = None):
+    if threshold is None:
+        if uid=='coregulator':
+            threshold=0.1
+        else:
+            threshold=0.5
     max_targets = max((len(targets) for targets in connections.values()), default=1)
     coreg_threshold = int(threshold * max_targets)
     return coreg_threshold
@@ -31,10 +36,7 @@ def create_network(entity_to_partners, threshold=None, uid=None):
     #     threshold = 0.50 * max_partners
 
     if threshold is None:
-        if uid=='coregulator':
-            threshold = default_threshold(entity_to_partners, threshold=0.1)
-        else:
-            threshold = default_threshold(entity_to_partners, threshold=0.5)
+        threshold = default_threshold(entity_to_partners,uid= uid)
 
     entities_in_graph = set()
 

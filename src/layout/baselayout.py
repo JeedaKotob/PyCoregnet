@@ -6,6 +6,7 @@ import pandas as pd
 from functools import partial
 from graph import adj as adj
 from graph import fullbipartite as full
+import utils
 cyto.load_extra_layouts()
 
 from components.ui import tabs, button_group,stat_box,threshold_input
@@ -188,7 +189,6 @@ class BaseNetworkGraph:
             
             
             if not graph_data :
-                import utils #TODO Change
                 if self.preprocess:
                     graph_data = self.preprocess(utils.grn) # cache this not the elements 
                 else:
@@ -467,7 +467,6 @@ class BaseNetworkGraph:
                 cache = app.server.config["APP_CACHE"]
                 graph_data = cache.get(uid)
                 if self.uid=="fullbipartite":
-                    import utils
                     nodes_n_edges,threshold = self.create_network(utils.grn)  
                 else:
                     nodes_n_edges,threshold = self.create_network(entity_to_partners=graph_data,uid=uid)       
