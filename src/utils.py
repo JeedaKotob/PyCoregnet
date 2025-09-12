@@ -23,7 +23,7 @@ def get_tf_targets(grn_data):
     bytf = grn_data.get('adjlist', {}).get('bytf', {})
 
     for tf, targets in bytf.items():
-        tf_targets[tf] = set(targets.get('act') + targets.get('rep'))
+        tf_targets[tf] = set(targets.get('act', []) + targets.get('rep', []))
 
     return tf_targets
 
@@ -32,14 +32,16 @@ def create_tf_interaction_network(tf_targets, threshold=None):
     nodes_data = []
     edges_data = []
     edge_ids = set()
+    
     if threshold is None:
-        max_targets = max(len(targets) for targets in tf_targets.values())
+        max_targets = max((len(targets) for targets in tf_targets.values()), default=1)
         threshold = 0.10 * max_targets
-    # tf_nodes_in_graph = set()
-   
+
+    tf_nodes_in_graph = set()
+
     for tf1, tf2 in combinations(tfs, 2):
-        targets1 = tf_targets.get(tf1)
-        targets2 = tf_targets.get(tf2)
+        targets1 = tf_targets.get(tf1, set())
+        targets2 = tf_targets.get(tf2, set())
         shared_targets = targets1.intersection(targets2)
         shared_count = len(shared_targets)
 
@@ -56,19 +58,18 @@ def create_tf_interaction_network(tf_targets, threshold=None):
                     }
                 })
                 edge_ids.add(edge_id)
-                # tf_nodes_in_graph.add(tf1)
-                # tf_nodes_in_graph.add(tf2)
+                tf_nodes_in_graph.add(tf1)
+                tf_nodes_in_graph.add(tf2)
 
-    # Add nodes that are part of the graph OR all TFs if graph is empty
-  
-    # nodes_to_include = tfs
 
-    if edges_data: 
-        for tf in tfs:
-            target_count = len(tf_targets[tf])
-            nodes_data.append({'data': {'id': tf, 'target_count': target_count, 'type': 'tf'}})
+    nodes_to_include = tf_nodes_in_graph if edges_data else tfs
+    
+    for tf in nodes_to_include:
+        target_count = len(tf_targets.get(tf, []))
+        nodes_data.append({'data': {'id': tf, 'target_count': target_count, 'type': 'tf'}})
 
     return {'nodes': nodes_data, 'edges': edges_data}
+
 
 def create_full_network(grn_data):
     edges=[]
@@ -105,25 +106,24 @@ def get_target_tfs(grn_data):
     bygene = grn_data.get('adjlist').get('bygene')
 
     for target, tfs in bygene.items():
-        target_tfs[target] = set(tfs.get('act')+ tfs.get('rep'))
+        target_tfs[target] = set(tfs.get('act', [])+ tfs.get('rep', []))
 
     return target_tfs
 
 def create_coregulated_network(target_tfs,threshold=None):
-    # targets=grn_data.get('adjlist').get('bygene').keys()
     targets=list(target_tfs.keys())
     nodes_data=[]
     edges_data=[]
     edge_ids=set()
     if threshold is None:
-        max_tfs = max(len(tfs) for tfs in target_tfs.values())
+        max_tfs = max((len(tfs) for tfs in target_tfs.values()), default=1)
         threshold = 0.50 * max_tfs
 
-    # target_nodes_in_graph=set()
+    target_nodes_in_graph = set()
 
     for tgt1,tgt2 in combinations(targets,2):
-        tfs1= target_tfs.get(tgt1)
-        tfs2= target_tfs.get(tgt2)
+        tfs1= target_tfs.get(tgt1, set())
+        tfs2= target_tfs.get(tgt2, set())
         shared_tfs=tfs1.intersection(tfs2)
         shared_count = len(shared_tfs)
 
@@ -140,15 +140,15 @@ def create_coregulated_network(target_tfs,threshold=None):
                     }
                 })
                 edge_ids.add(edge_id)
-                # target_nodes_in_graph.add(tgt1)
-                # target_nodes_in_graph.add(tgt2)
+                target_nodes_in_graph.add(tgt1)
+                target_nodes_in_graph.add(tgt2)
 
-    # nodes_to_include=target_nodes_in_graph if edges_data else targets
 
-    for target in targets:
-        tf_count=len(target_tfs[target])
-        if tf_count>=threshold:
-            nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'tf'}})
+    nodes_to_include = target_nodes_in_graph if edges_data else targets
+
+    for target in nodes_to_include:
+        tf_count=len(target_tfs.get(target, []))
+        nodes_data.append({'data':{'id':target,'tf_count':tf_count,'type':'target'}})
 
     return {'nodes':nodes_data,'edges':edges_data}
 
@@ -198,19 +198,30 @@ def get_heat_map(filepath,genes):
     return heatmap
 
 
-    # heatmap.write_html("h.html",auto_open=True)
+grn = load_grn_data("./grn.json")
+if grn:
+    target_tfs = get_target_tfs(grn)
+    tf_targets=get_tf_targets(grn)
+    max_targets = max((len(targets) for targets in tf_targets.values()), default=1)
+    coreg_threshold = int(0.10 * max_targets)
+    max_tfs = max((len(tfs) for tfs in target_tfs.values()), default=1)
+    target_threshold = int(0.50 * max_tfs)
+else:
+    target_tfs, tf_targets = {}, {}
+    coreg_threshold, target_threshold = 1, 1
+    
+    
 
+grn = load_grn_data("./grn.json")
+# target_tfs = get_target_tfs(grn)
+# tf_targets=get_tf_targets(grn)
+# max_targets = max(len(targets) for targets in tf_targets.values())
+# coreg_threshold = int(0.10 * max_targets)
+# # coreg_thresh=5 # used for reset coreg graph
 
-grn = load_grn_data("data/grn.json")
-target_tfs = get_target_tfs(grn)
-tf_targets=get_tf_targets(grn)
-max_targets = max(len(targets) for targets in tf_targets.values())
-coreg_threshold = int(0.10 * max_targets)
-# coreg_thresh=5 # used for reset coreg graph
-
-max_tfs = max(len(tfs) for tfs in target_tfs.values())
-target_threshold = 0.50 * max_tfs
+# max_tfs = max(len(tfs) for tfs in target_tfs.values())
+# target_threshold = 0.50 * max_tfs
 # target_threshold=10 # used for reset target (coregulated) graph
 
 
-get_heat_map("data/CIT_BLCA_EXP.csv","A2M")
+# get_heat_map("data/CIT_BLCA_EXP.csv","A2M")
