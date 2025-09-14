@@ -44,11 +44,10 @@ class BaseNetworkGraph:
         
     def get_layout(self):
         
-        graph_tabs = tabs(id={"type": "graph-tabs", "uid": self.uid}, value="full",
+        graph_tabs = tabs(id={"type": "graph-tabs", "uid": self.uid}, value="graph",
             options=[
-            {'label': 'Full Bipartite Network', 'tab_id': 'full'},
-            {'label': 'Coregulators Network', 'tab_id': 'coregs'},
-            {'label': 'Coregulated Network', 'tab_id': 'coregulated'},
+            {'label': 'Graph', 'tab_id': 'graph'},
+            {'label': "Graph's HeatMap", 'tab_id': 'heatmap'}
             ],
         )
 
@@ -171,9 +170,10 @@ class BaseNetworkGraph:
             ],
             Input({"type": "main-content", "uid": self.uid}, "children"),
             Input({"type": "threshold-btn", "uid": self.uid},"n_clicks"), 
+            Input({"type": "graph-tabs", "uid": self.uid}, "active_tab"),
             State({"type": "threshold", "uid": self.uid},"value"), # Allow Backtrack (True/False) 
         )
-        def load_graph(children : list, threshold_btn , n_threshold ):
+        def load_graph(children : list, threshold_btn , active_tab,n_threshold ):
 
             uid = self.uid
             global threshold, total_nodes, total_edges
@@ -214,21 +214,34 @@ class BaseNetworkGraph:
                 elements = graph_data['nodes'] + graph_data['edges']     
                 total_nodes=len(graph_data['nodes'])      
                 total_edges=len(graph_data['edges'])      
-                            
-                            
-                
-                
+
+            graph_style = {'flex-grow': '1', 'box-sizing': 'border-box'}
+            heat_style  = {}           
+
+            if active_tab == 'graph':
+                heat_style  = {'display': 'none'}
+            else:
+                graph_style = {**graph_style, 'display': 'none'}     
+                        
             cytoscape_graph = cyto.Cytoscape(
-                id={"type": "network-graph", "uid": uid},
-                style={'flex-grow': '1', 'box-sizing': 'border-box'},
-                minZoom=0.1,
-                maxZoom=2,
-                elements=elements,
-                stylesheet=self.stylesheet,
-                layout=self.graph_layout,
+                    id={"type": "network-graph", "uid": uid},
+                    style=graph_style,
+                    minZoom=0.1,
+                    maxZoom=2,
+                    elements=elements,
+                    stylesheet=self.stylesheet,
+                    layout=self.graph_layout,
+                )
+            heatmap=html.Div("Heatmap will be here", id={"type": "heatmap", "uid": uid}, style=heat_style)
+           
+            content = html.Div(
+                [cytoscape_graph, heatmap],
+                style={
+                    'flex-grow': '1',
+                    'display': 'flex', 
+                }
             )
-            
-            return [children[0], cytoscape_graph] , threshold
+            return [children[0], content] , threshold
             
     
         #  SET OPTIONS SYNCED FROM the centralized store (defualt)
