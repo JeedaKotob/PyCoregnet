@@ -1,14 +1,32 @@
 """
-Create the network with less code to make it more light weight
+
+network_controls = NetworkControls(
+    name = GRAPH,
+    selection_mode = 'single',
+    filter_mode = 'both',
+    inspector_options = {
+        "Regulation" : partial(fullbipartite.regulation,grn_path="./grn.json"),
+        "Expression" : partial(fullbipartite.get_heat_map,filepath="./CIT_BLCA_EXP.csv"),
+    },
+    enable_stats_display = True   
+)
+
+graph_options = network_controls.store
 
 
-Three main classes
-    - NetworkControls
-        - Responsible for the network controls ;  the graph needs a threshold input or not
-    - NetworkOptions
-        - responsible for the network parms, cyto.cytoscape parm handeler
-    - NetworkLayout
-        - The entire layout NetworkOptions + NetworkControls, point of this to change to Heatmap w/out any issue 
+graph = CytoGraphHandler(
+    store = graph_options,
+    network_creation_function = fullbipartite.create_network,
+    network_stylesheet = stylesheet.full_network_stylesheet,
+    graph_layout = fullbipartite.layout,
+    dropdown_options = fullbipartite.options
+)
+
+
+NetworkLayout(
+    graph,
+    network_controls
+)
 
 """
 
@@ -204,23 +222,121 @@ class NetworkControls:
             
     
 
-class NetworkOptions:
+def manual_tabs(uid,options: list):
+    return dbc.Tabs(
+        id={"type": "graph-tabs", "uid": uid},
+        className="justify-content-center text-black border-0 bg-light",
+        children=[
+            dbc.Tab(
+                label = list(option.keys())[0],
+                tab_id = list(option.keys())[0].replace(" ", "").lower(),
+                children = [list(option.values())[0]],
+                labelClassName='text-black border-0 ',
+                activeLabelClassName='text-black ',
+                activeTabClassName='text-black border-0 '
+            ) for option in options
+        ]
+    )    
+
+graph_tabs = manual_tabs(
+    uid="s",
+    options=[
+        {'Full Bipartite Network': html.Div("Graph")},
+        {'Full Bipartite Heatmap': html.Div("Heatmap")}
+    ],
+)
+
+
+class CytoGraphHandler:
     def __init__(
         self,
+        uid,
         network_creation_function: callable,
+        network_preprocess_function: callable,
         network_stylesheet : dict,
         network_layout_config : dict,
         dropdown_options : dict,
         content_tabs : dict
-        ): ...
+        ): 
+        
+        params = {k: v for k, v in locals().items() if k != 'self'}
+        for k, v in params.items():
+            setattr(self, k, v)
+        
+
+    def load(self, uid : str = None):
+        
+        if uid is None:
+            uid = self.uid
+            
+        
+        
+        pass 
+        
+
+        
+            
     
+
+        
+
+    
+
+    def create_compontent(self):
+        return 
+        
+        pass
+    
+    
+
+
 
 class NetworkLayout:
     def __init__(
         self,
-        network_options : NetworkOptions ,
-        network_controls : NetworkControls,
-        network_heatmap 
-        ):
-        pass
+        network_controls = NetworkControls
+        ): 
+        self.network_controls = network_controls
+        
+        
+    def render_layout(self):
+        
+        return dbc.Container(
+            fluid=True,
+            className="p-0 m-0 h-100",
+            children=[
+            dbc.Row(
+                className="g-0 h-100",  # g-0 removes gutters, h-100 for full height
+                children=[
+                # Main content area - 75% (width 9) nneds to be on the left
+                dbc.Col(
+                    width=9,
+                    className="d-flex flex-column overflow-hidden bg-danger",
+                    children=[
+                        graph_tabs,
+                        html.Div(
+                            className="d-flex justify-content-center align-items-center h-100",
+                            children=[
+                                dbc.Spinner(
+                                    size="lg",
+                                    color="primary",
+                                )
+                            ]
+                        ),
+                    ]  
+                ),
+                # Sidebar area - 25% (width 3)
+                dbc.Col(
+                    width=3,
+                    className="bg-secondary text-white p-3 h-100 overflow-auto",
+                    children=self.network_controls.create_component_list()
+                )
+                ]
+            )
+            ]
+        )
+      
+        
+        
+        
     
