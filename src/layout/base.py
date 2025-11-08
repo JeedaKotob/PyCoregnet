@@ -43,7 +43,7 @@ from typing import Literal
 cyto.load_extra_layouts()
 
 from components.ui import tabs, button_group, stat_box, threshold_input
-
+import utils
 
 class NetworkControls:
 
@@ -92,7 +92,7 @@ class NetworkControls:
         {
             "type": "threshold",
             "component": threshold_input,
-            "check_key": "threshold",
+            "check_key": "threshold_input",
             "props": {
                 "label": "Threshold",
             }
@@ -106,7 +106,8 @@ class NetworkControls:
         selection_mode: Literal["single", "off", "multiple"] = None,
         filter_mode: Literal["target", "both", "tf"] = None,
         backtracking_mode : bool = None,
-        threshold : float = None,
+        dropdown_options : dict = None,
+        threshold_input : bool = None,
         inspector_options : dict = None,
         enable_stats_display : bool = None
         ):
@@ -115,7 +116,7 @@ class NetworkControls:
         self.uid = name
         
         # Selected options (Defined parameters)
-        params = {k: v for k, v in locals().items() if k != 'self' and v is not None}
+        params = {k: v for k, v in locals().items() if k != 'self' and v is not None and v is not False}
         
         for k, v in params.items():
             setattr(self, k, v)
@@ -222,24 +223,65 @@ class NetworkControls:
             
     
 
+
+
+class CytoGraphHandler:
+    def __init__(
+        self,
+        # uid,
+        network_preprocess_function: callable,
+        network_creation_function: callable,
+        network_threshold : float,
+        network_stylesheet : dict,
+        network_layout_config : dict,
+        ): 
+        
+        params = {k: v for k, v in locals().items() if k != 'self'}
+        for k, v in params.items():
+            setattr(self, k, v)
+            
+    
+    def _perprocess():
+        pass
+    
+    def _cache_hander():
+        pass
+        
+    def create_compontent(self):
+        
+        graph_data , _= self.network_creation_function(utils.grn)
+        elements = graph_data['nodes'] + graph_data['edges']     
+
+        return cyto.Cytoscape(
+            id={"type": "network-graph", "uid": "hardcoded"},
+            style={'flex-grow': '1', 'box-sizing': 'border-box'},
+            minZoom=0.1,
+            maxZoom=2,
+            elements=elements,
+            stylesheet=self.network_stylesheet,
+            layout=self.network_layout_config,
+        ) 
+    
+        
+    
+
 def manual_tabs(uid,options: list):
     return dbc.Tabs(
         id={"type": "graph-tabs", "uid": uid},
-        className="justify-content-center text-black border-0 bg-light",
+        className="justify-content-center text-black border-0 bg-light h-0",
         children=[
             dbc.Tab(
                 label = list(option.keys())[0],
                 tab_id = list(option.keys())[0].replace(" ", "").lower(),
-                children = [list(option.values())[0]],
                 labelClassName='text-black border-0 ',
-                activeLabelClassName='text-black ',
-                activeTabClassName='text-black border-0 '
+                # activeLabelClassName='text-black ',
+                # activeTabClassName='text-black border-0 '
             ) for option in options
         ]
     )    
 
 graph_tabs = manual_tabs(
-    uid="s",
+    uid="hardcoded",
     options=[
         {'Full Bipartite Network': html.Div("Graph")},
         {'Full Bipartite Heatmap': html.Div("Heatmap")}
@@ -247,56 +289,27 @@ graph_tabs = manual_tabs(
 )
 
 
-class CytoGraphHandler:
-    def __init__(
-        self,
-        uid,
-        network_creation_function: callable,
-        network_preprocess_function: callable,
-        network_stylesheet : dict,
-        network_layout_config : dict,
-        dropdown_options : dict,
-        content_tabs : dict
-        ): 
-        
-        params = {k: v for k, v in locals().items() if k != 'self'}
-        for k, v in params.items():
-            setattr(self, k, v)
-        
 
-    def load(self, uid : str = None):
-        
-        if uid is None:
-            uid = self.uid
-            
-        
-        
-        pass 
-        
 
-        
-            
-    
 
-        
 
-    
-
-    def create_compontent(self):
-        return 
-        
-        pass
-    
-    
 
 
 
 class NetworkLayout:
     def __init__(
         self,
-        network_controls = NetworkControls
+        network_controls : NetworkControls,
+        cyto_graph_handler : CytoGraphHandler,
+        heatmap
         ): 
         self.network_controls = network_controls
+        self.cyto_graph_handler = cyto_graph_handler
+        self.heatmap = heatmap
+        
+        self.uid = "hardcoded"
+        
+        
         
         
     def render_layout(self):
@@ -310,20 +323,20 @@ class NetworkLayout:
                 children=[
                 # Main content area - 75% (width 9) nneds to be on the left
                 dbc.Col(
+                    id={"type" : "main-content", "uid" : self.uid},
                     width=9,
-                    className="d-flex flex-column overflow-hidden bg-danger",
+                    className="bg-danger d-flex flex-column overflow-hidden p-2",
                     children=[
                         graph_tabs,
                         html.Div(
                             className="d-flex justify-content-center align-items-center h-100",
-                            children=[
-                                dbc.Spinner(
+                            children = dbc.Spinner(
                                     size="lg",
                                     color="primary",
-                                )
-                            ]
-                        ),
-                    ]  
+                                    fullscreen=True
+                            )
+                    ),
+                ]
                 ),
                 # Sidebar area - 25% (width 3)
                 dbc.Col(
@@ -336,6 +349,32 @@ class NetworkLayout:
             ]
         )
       
+      
+    def _register(self):
+        
+            from dash import get_app
+            app : dash = get_app()
+            
+            @app.callback(
+                Output({"type": "main-content", "uid": self.uid}, "children"),
+                Input({"type": "main-content", "uid": self.uid}, "children"),
+                Input({"type" : "graph-tabs", "uid" :"hardcoded"}, "active_tab")
+            )
+            def _tabs(children,active_tab):
+                
+                print(active_tab)
+                if active_tab == "fullbipartitenetwork":
+                    return [children[0], self.cyto_graph_handler.create_compontent()]
+                elif active_tab == "fullbipartiteheatmap":
+                    return [children[0], self.heatmap]
+                
+                
+            
+
+                
+                
+                
+  
         
         
         
