@@ -5,6 +5,9 @@ from layout.base import NetworkControls , NetworkLayout, CytoGraphHandler
 from graph import fullbipartite
 from assets import stylesheet
 
+
+# Paused
+"""
 dash.register_page(__name__, path='/dashboard/basetest')
 
 network_controls = NetworkControls(
@@ -31,9 +34,6 @@ cyto_graph_handler = CytoGraphHandler(
 )
 
 
-
-from pages.heatmap import hm
-
 network_layout = NetworkLayout(
     network_controls=network_controls,
     cyto_graph_handler=cyto_graph_handler,
@@ -50,3 +50,4 @@ network_layout._register()
 
 
 
+"""
