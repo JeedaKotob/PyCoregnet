@@ -29,7 +29,6 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
 from dash import Dash, Input, Output, State, callback, callback_context, ctx, dcc, html, MATCH, ALL, no_update
-import dash_bio as dashbio
 
 from assets import stylesheet
 from functools import partial
@@ -575,3 +574,28 @@ layout = example_layout(dcc.Graph(
     figure=heatmap,
     style={"flex": "1"}
 ))
+# https://github.com/plotly/plotly.js/blob/4ed586a6402073cc5c50a40cad5f652d7472fcce/src/plots/cartesian/axes.js#L636-L746
+
+
+def render_layout(hm):
+    return dbc.Container(
+        fluid=True,
+        className="p-0 m-0 h-100",
+        children=[
+        dbc.Row(
+            className="g-0 h-100",  # g-0 removes gutters, h-100 for full height
+            children=[
+            # Main content area - 75% (width 9) nneds to be on the left
+            dbc.Col(
+                width=10,
+                className="bg-danger d-flex flex-column overflow-hidden ",
+                children=[hm]
+                ),
+            ]
+            ),
+            # Sidebar area - 25% (width 3)
+            dbc.Col(
+                width=3,
+                className="bg-danger text-white p-3 h-100 overflow-auto",            )
+            ]
+        )
