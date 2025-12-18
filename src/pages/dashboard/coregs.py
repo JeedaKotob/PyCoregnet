@@ -56,5 +56,5 @@ app_layout = BaseNetworkGraph(
 )
 
 layout = app_layout.get_layout()
-app_layout.register_callbacks(dash.get_app())
+# app_layout.register_callbacks(dash.get_app())
 
