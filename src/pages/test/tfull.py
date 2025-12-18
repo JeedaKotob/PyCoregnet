@@ -19,6 +19,15 @@ from layout.common import *
 
 layout = dbc.Spinner(size="lg",color="primary")
 
+def options(graph_net, store):
+    options = [{
+        'label': f"{node['data']['id']}   ({node['data']['type']})",
+        'value': node['data']['id'],
+        # 'title': node['data']['type'],
+    } for node in graph_net]        
+    return options
+
+
 
 uicontrols = UIControls(
     selection_mode="single",
@@ -34,7 +43,8 @@ cytograph = CytoGraph(
     creation_function=fullbipartite.create_network,
     stylesheet=stylesheet.full_network_stylesheet,
     layout_config=fullbipartite.layout,
-    dropdown_options=fullbipartite.options
+    # dropdown_options=fullbipartite.options
+    dropdown_options=options
 )
 
 

@@ -358,6 +358,13 @@ class UILayout:
                 )
             ]
         )
+        
+        
+def get_first(val):
+    if isinstance(val, list) and val:
+        assert len(val) == 1
+        return val[0]
+    return val
 
 # All UI Input goes to the store
 @callback(
@@ -422,8 +429,19 @@ def sync(
                 return no_update,no_update
             
             node_id = tapNodeData.get('id')
+            node_type = tapNodeData.get('type')
             if not node_id:
                 return store, no_update
+            
+            # Check if node matches the current filter mode
+            filt_mode = store.get('filter_mode')
+            if node_type is not None:
+                if filt_mode == 'target' and node_type != 'target':
+                    return store, no_update
+                elif filt_mode == 'tf' and node_type != 'tf':
+                    return store, no_update
+            # 'both' allows all node types, and None type passes through
+            
             if sel_mode == 'single':
                 store["selected"] = node_id
                 return store, node_id
@@ -479,7 +497,6 @@ def sync(
 )
 def dropdown_selection_mode(store, multi, disabled):
     selection_mode = store.get('selection_mode')
-    # print(store['selected'])
     
     if selection_mode == "single":
         if multi is False and disabled is False:
@@ -499,4 +516,102 @@ def dropdown_selection_mode(store, multi, disabled):
     return no_update, no_update
     
         
+@callback(
+    Output({"type": "options_dropdown", "uid": MATCH},"options"),    
+    Input({"type": "filter_mode", "uid": ALL}, "value"),
+    State({"type": "options_dropdown", "uid": MATCH},"options"),
+    prevent_initial_call=True,
+)
+def options_filter_mode(filter_mode,options):
+
+    if not filter_mode:
+        return no_update
     
+    filter_mode = get_first(filter_mode)
+    
+    if not options:
+        return no_update
+    
+    # Mark which options should be disabled
+    options_with_status = []
+    for option in options:
+        node_type = option.get('title', '')
+        
+        disabled = False
+        if filter_mode == 'target':
+            disabled = node_type != 'target'
+        elif filter_mode == 'tf':
+            disabled = node_type != 'tf'
+        elif filter_mode == 'both':
+            disabled = False
+        
+        options_with_status.append((option, disabled))
+    
+    # Sort so disabled options go to the bottom
+    options_with_status.sort(key=lambda x: x[1])
+    
+    # Create patch with reordered options
+    patch = Patch()
+    for i, (option, disabled) in enumerate(options_with_status):
+        patch[i] = option.copy()
+        patch[i]['disabled'] = disabled
+    
+    return patch
+        
+
+            
+@callback(
+    Output({"type": "network-graph", "uid": MATCH}, "elements"),
+    Input({"type": "store", "uid": MATCH}, "data"),
+    State({"type": "network-graph", "uid": MATCH}, "elements"),
+    prevent_initial_call=True
+)
+def highlightor(store, elements):
+    
+    selected_val = store['selected']
+    if isinstance(selected_val, str):
+        selected = {selected_val}
+    else:
+        selected = set(selected_val) if selected_val else set()
+
+    if not selected:
+        patch = Patch()
+        for i in range(len(elements)):
+            patch[i] = elements[i].copy()
+            patch[i]['classes'] = ''
+        return patch
+        
+    connected_nodes = set()
+    patch = Patch()
+    
+    # First pass: identify connected nodes
+    for i, e in enumerate(elements):
+        if 'source' in e['data']:
+            src = e['data']['source']
+            tgt = e['data']['target']        
+            if selected & {src, tgt}:
+                connected_nodes.update([src, tgt])
+    
+    # Second pass: apply classes using patch
+    for i, e in enumerate(elements):
+        elem_copy = e.copy()
+        
+        if 'source' in e['data']:  # Edge
+            src = e['data']['source']
+            tgt = e['data']['target']        
+            if selected & {src, tgt}:
+                elem_copy['classes'] = "highlighted-edge"
+            else:
+                elem_copy['classes'] = "faded"
+        else:  # Node
+            nid = e['data']['id']
+            if nid in selected:
+                elem_copy['classes'] = 'highlighted'
+            elif nid in connected_nodes:
+                elem_copy['classes'] = ''
+            else:
+                elem_copy['classes'] = 'faded'
+        
+        patch[i] = elem_copy
+    
+    return patch

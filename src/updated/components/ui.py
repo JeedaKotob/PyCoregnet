@@ -7,7 +7,7 @@ def btn_grp(id: str, label: str, options: list, value: str):
     return dbc.Row(
         [
             dbc.Col(
-                dbc.Label(label, className="small text-center "),width="auto"
+                dbc.Label(label, className="small text-cxenter "),width="auto"
             ),
             dbc.Col(
                 dbc.RadioItems(
