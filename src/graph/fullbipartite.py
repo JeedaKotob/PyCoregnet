@@ -34,25 +34,15 @@ def create_network(grn_data):
             'position': {'x': random.randint(1000, 4000), 'y': random.randint(50, 2500)}
         })
 
-    threshold=None
     
-    return {'nodes': nodes, 'edges': edges},threshold
+    
+    return {'nodes': nodes, 'edges': edges}
 
-def options(graph_net, store):
-
-    filter_mode = store['filter_mode']
-    options = [{
+def options(graph_net):
+    return [{
         'label': f"{node['data']['id']}   ({node['data']['type']})",
         'value': node['data']['id'],
-    } for node in graph_net]
-    
-    if filter_mode == "tf":
-        options =  [node for node in options if "(tf)" in node['label']]
-    elif filter_mode == "target":
-        options = [node for node in options if "(target)" in node['label']]
-        
-    return options
-
+    } for node in graph_net]        
 
 layout = {'name': 'preset', 'fit': True}
 

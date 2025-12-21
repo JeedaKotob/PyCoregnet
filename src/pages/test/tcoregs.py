@@ -13,7 +13,7 @@ import utils
 
 dash.register_page(__name__, path='/dashboard/tcoregs')
 
-from graph import adj
+from updated.graph import adj
 from assets import stylesheet
 
 from layout.common import *
@@ -40,10 +40,14 @@ uicontrols = UIControls(
     options_dropdown=True,
 )
 
+
 cytograph = CytoGraph(
-    preprocess_function=partial(adj.get_entity_partners,key="bytf"),
+    preprocess_function=adj.get_genes,
+    preprocess_role="bytf",
     creation_function=adj.create_network,
-    get_threshold=partial(adj.default_threshold,threshold = 0.1),
+    threshold_function=adj.default_threshold,
+    threshold = None,
+    threshold_ratio = 0.1,
     stylesheet=stylesheet.coreg_network_stylesheet,
     layout_config=graph_layout,
     dropdown_options=adj.options

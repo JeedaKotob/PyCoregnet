@@ -218,73 +218,89 @@ class CytoGraph:
     def __init__(
         self,
         preprocess_function: callable = None,
+        preprocess_role: str = Literal['bygene','bytf'],
         creation_function: callable = None,
-        get_threshold : callable = None,
+        threshold_function : callable = None,
         threshold: float = None,
+        threshold_ratio: float = None,
         stylesheet: dict = None,
         layout_config: dict = None,
         dropdown_options: callable = None,
         ): 
         self.preprocess_function = preprocess_function
+        self.preprocess_role = preprocess_role
         self.creation_function = creation_function
-        self.get_threshold = get_threshold
+        self.threshold_function = threshold_function
         self.threshold = threshold
+        self.threshold_ratio = threshold_ratio
         self.stylesheet = stylesheet
         self.layout_config = layout_config
         self.dropdown_options = dropdown_options
         
-        self._store = {
-            "selected" : [], 
-            "threshold" : self.threshold,
-            "metadata" :{
-                "total_nodes" : 0,
-                "total_edges" : 0,
-                "selected_nodes" : 0,
-                "selected_edges" : 0,
+        
+        # self._store = {
+        #     "selected" : [], 
+        #     "threshold" : self.threshold,
+        #     "metadata" :{
+        #         "total_nodes" : 0,
+        #         "total_edges" : 0,
+        #         "selected_nodes" : 0,
+        #         "selected_edges" : 0,
+        #     },
+        # }
+        #"threshold_ratio" : self.threshold_ratio,
+        # "role" : self.preprocess_role,
+    @property
+    def _store(self):
+        store = {
+            "selected": [],
+            "metadata": {
+                "total_nodes": 0,
+                "total_edges": 0,
+                "selected_nodes": 0,
+                "selected_edges": 0,
             },
         }
 
+        if self.threshold is not None:
+            store.update({
+                "threshold": self.threshold,
+                "threshold_ratio": self.threshold_ratio,
+                "preprocess_role": self.preprocess_role,
+            })
+
+        return store
+
+        
     
     def pack(self,uid):
         self.uid = uid
         return self
-        
+                
     def compute(self):
         
         if self.preprocess_function:
-            data = self.preprocess_function(utils.grn)
-            
+            #NOTE we can cache this
+            pre_data = self.preprocess_function(utils.grn,self.preprocess_role)    
+            if not self.threshold:
+                self.threshold = self.threshold_function(pre_data,self.threshold_ratio)
+                
+            data = self.creation_function(pre_data,self.threshold)
         else:
-            data, _ = self.creation_function(utils.grn)
+            data = self.creation_function(utils.grn)
             
-            
-        if self.get_threshold:
-            threshold = self.get_threshold(data)
-            nodes_n_edges,_= self.creation_function(data,threshold)
-            elements = nodes_n_edges['nodes'] + nodes_n_edges['edges']      
-            total_nodes= len(nodes_n_edges['nodes'])
-            total_edges = len(nodes_n_edges['edges'])  
-            self.threshold = threshold    
-            if self.dropdown_options:
-                options = self.dropdown_options(nodes_n_edges['nodes'])
-        else:
-            elements = data['nodes'] + data['edges']     
-            total_nodes=len(data['nodes'])      
-            total_edges=len(data['edges'])      
-            if self.dropdown_options:
-                options = self.dropdown_options(data['nodes'],{"filter_mode" : ""})#TODO Remove hardcod
-            
-            
-        self._store['metadata']['total_nodes'] = total_nodes
-        self._store['metadata']['total_edges'] = total_edges
+        self.elements  = data['nodes'] + data['edges']     
+        
+        self._store['metadata']['total_nodes'] = len(data['nodes'])      
+        self._store['metadata']['total_edges'] = len(data['edges'])    
+
         if self.dropdown_options:
-            self.options = options
-        self.elements = elements
-        
-        
+            self.options = self.dropdown_options(data['nodes'])#TODO Remove hardcod
+            
         return self
-    
-    
+      
+                
+
     def unpack(self):
         
         if self.uid is None:
@@ -515,50 +531,6 @@ def dropdown_selection_mode(store, multi, disabled):
     
     return no_update, no_update
     
-        
-@callback(
-    Output({"type": "options_dropdown", "uid": MATCH},"options"),    
-    Input({"type": "filter_mode", "uid": ALL}, "value"),
-    State({"type": "options_dropdown", "uid": MATCH},"options"),
-    prevent_initial_call=True,
-)
-def options_filter_mode(filter_mode,options):
-
-    if not filter_mode:
-        return no_update
-    
-    filter_mode = get_first(filter_mode)
-    
-    if not options:
-        return no_update
-    
-    # Mark which options should be disabled
-    options_with_status = []
-    for option in options:
-        node_type = option.get('title', '')
-        
-        disabled = False
-        if filter_mode == 'target':
-            disabled = node_type != 'target'
-        elif filter_mode == 'tf':
-            disabled = node_type != 'tf'
-        elif filter_mode == 'both':
-            disabled = False
-        
-        options_with_status.append((option, disabled))
-    
-    # Sort so disabled options go to the bottom
-    options_with_status.sort(key=lambda x: x[1])
-    
-    # Create patch with reordered options
-    patch = Patch()
-    for i, (option, disabled) in enumerate(options_with_status):
-        patch[i] = option.copy()
-        patch[i]['disabled'] = disabled
-    
-    return patch
-        
-
             
 @callback(
     Output({"type": "network-graph", "uid": MATCH}, "elements"),
@@ -615,3 +587,110 @@ def highlightor(store, elements):
         patch[i] = elem_copy
     
     return patch
+
+
+
+@callback(
+    Output({"type": "options_dropdown", "uid": MATCH}, "options"),
+    Input({"type": "network-graph", "uid": MATCH}, "elements"),
+    Input({"type": "filter_mode", "uid": ALL}, "value"),
+    State({"type": "options_dropdown", "uid": MATCH}, "options"),
+)
+def create_dropdown_options(elements, filter_mode, current_options):
+        
+    # Extract filter_mode from ALL pattern-matched list
+    if isinstance(filter_mode, list) and filter_mode:
+        filter_mode = filter_mode[0]
+    
+    # Get nodes using GENERATOR better for memory 
+    nodes = (ele['data'] for ele in elements if 'source' not in ele['data'])
+    
+    # Get the first node to check data type
+    first_node = next(nodes, None)
+    
+    # Handle empty nodes case
+    if first_node is None:
+        return []
+    
+    # Is a bool True if full graph
+    byreg = first_node.get('type') in ['tf', 'target']
+    
+    options = []
+    
+    # Add the first node since we consumed it using next()
+    label = first_node.get('label', first_node.get('id'))
+    if byreg:
+        if first_node['type']==filter_mode or filter_mode =="both":
+            label = f"{label} ({first_node['type']})"
+            options.append({'label': label, 'value': first_node['id']})
+    else:
+        options.append({'label': label, 'value': first_node['id']})
+        
+
+    # Process the REST of the nodes
+    for node in nodes:
+        label = node.get('label', node.get('id'))
+    
+        if byreg:
+            if node['type']==filter_mode or filter_mode =="both":
+                label = f"{label} ({node['type']})"        
+                options.append({
+                    'label': label, 
+                    'value': node['id']
+                })
+        else:
+            options.append({
+                'label': label, 
+                'value': node['id']
+            })
+            
+        
+    options = sorted(options, key=lambda x: x['label'])
+    
+    return options
+
+
+@callback(
+    Output({"type": "threshold_input", "uid": ALL}, "value"),
+    Input({"type": "main-content", "uid": ALL}, "children"),
+    State({"type": "store", "uid": ALL}, "data"),
+)
+def update_thresh(children,store):
+    store = get_first(store)
+    threshold = store.get("threshold",[])
+    if threshold:
+        return [threshold]
+    else:
+        return [no_update]
+
+
+@callback(
+    Output({"type": "network-graph", "uid": MATCH}, "elements",allow_duplicate=True),
+    Input({"type": "threshold_input_btn", "uid": ALL}, "n_clicks"),
+    State({"type": "threshold_input", "uid": ALL}, "value"),
+    State({"type": "store", "uid": ALL}, "data"),
+    prevent_initial_call=True    
+)
+def update_graph_thresh(n_clicks,value,store):
+    value = get_first(value)
+    store = get_first(store)
+
+    from updated.graph import adj
+    print(value)
+    data = adj.create_network(
+        adj.get_genes(utils.grn,store['preprocess_role']),
+        value
+    )
+    print(data)
+    
+    return data['nodes'] + data['edges']
+
+    
+    
+    
+    
+    
+    
+    
+    return no_update
+
