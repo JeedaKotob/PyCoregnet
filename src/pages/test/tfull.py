@@ -23,6 +23,8 @@ uicontrols = UIControls(
     selection_mode="single",
     filter_mode="both",
     options_dropdown=True,
+    inspector_tabs=['table','heatmap'],
+    network_stats=True
     
     # backtracking_mode=True,
     # threshold_input=True,

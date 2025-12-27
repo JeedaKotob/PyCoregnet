@@ -38,6 +38,9 @@ uicontrols = UIControls(
     selection_mode="single",
     threshold_input=True,
     options_dropdown=True,
+    inspector_tabs = ['adj_table'],
+    network_stats=True,
+    
 )
 
 

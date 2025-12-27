@@ -7,7 +7,7 @@ def btn_grp(id: str, label: str, options: list, value: str):
     return dbc.Row(
         [
             dbc.Col(
-                dbc.Label(label, className="small text-cxenter "),width="auto"
+                dbc.Label(label, className="small text-cxenter ")
             ),
             dbc.Col(
                 dbc.RadioItems(
@@ -18,8 +18,7 @@ def btn_grp(id: str, label: str, options: list, value: str):
                     labelCheckedClassName="active btn-sm",
                     options=options,
                     value=value,
-                ),
-                width="auto"
+                )
             ),
         ],
         justify="between",
@@ -39,8 +38,7 @@ def thresh_input(id: dict, label: str):
                     min=1,
                     size="sm",
                     placeholder=label
-                ),
-                width=5
+                )
             ),
             dbc.Col(
                 dbc.Button(
@@ -48,8 +46,7 @@ def thresh_input(id: dict, label: str):
                     id=btn_id,
                     size="sm",
                     color="outline-primary"
-                ),
-                width="auto"
+                )
             ),
         ],
         align="center",
@@ -92,6 +89,7 @@ def tabs(id: str, options: list ):#, value: str):
     return dbc.Tabs(
         id=id,
         className="justify-content-center text-black border-0",
+        active_tab=None,
         # active_tab=value,
         children=[
             dbc.Tab(
@@ -106,6 +104,58 @@ def tabs(id: str, options: list ):#, value: str):
         ]
     )
     
+# def tabs(id: str, options: list ):#, value: str):
+def tabs(id: str, options: list, value: str):
+    return dbc.Card([
+            dbc.CardHeader([
+                dbc.Tabs(
+                id=id,
+                className="d-flex justify-content-evenly text-black border-0",
+                # active_tab=None,
+                children=[
+                    dbc.Tab(
+                        label=option['label'],
+                        # tab_id=option['tab_id'],
+                        tab_id=valueId,
+                        labelClassName='text-black border-0',
+                        activeLabelClassName='text-black border-0 border-bottom border-primary border-3',
+                        activeTabClassName='text-black border-0'
+                    ) for option,valueId in zip(options,value)
+                ]
+            )
+        ], style={"backgroundColor": "transparent"}),    
+        dbc.CardBody(id={"type": f"{id['type']}_content", "uid": id['uid']}, style={"backgroundColor": "transparent", "height": "50vh"}),
+    ], style={"backgroundColor": "transparent"}, className="d-flex flex-1")
+    
+    
+
+def network_stats(id: str):
+    uid = id['uid']
+    return dbc.Container([
+        dbc.Row([
+            dbc.Col(dbc.Label("Total: ", className="small text-cxenter")),
+            dbc.Col([
+                html.Span(id={"type": "total_nodes", "uid": uid}, children="0"),
+                " nodes | ",
+                html.Span(id={"type": "total_edges", "uid": uid}, children="0"),
+                " edges"
+            ], className="small text-cxenter"),
+        ], className="flex-nowrap text-nowrap"),
+        dbc.Row([
+            dbc.Col(dbc.Label("Selected: ", className="small text-cxenter")),
+            dbc.Col([
+                html.Span(id={"type": "selected_nodes", "uid": uid}, children="0"),
+                " nodes | ",
+                html.Span(id={"type": "selected_edges", "uid": uid}, children="0"),
+                " edges"
+            ], className="small text-cxenter"),
+        ], className="flex-nowrap text-nowrap"),
+    ])
+    
+
+# id={"type": "total_edges", "uid": id}
+# id={"type": "selected_nodes", "uid": id}
+# id={"type": "selected_edges", "uid": id}
 
 def get_heat_map(genes,filepath):
     import pandas as pd
@@ -151,116 +201,3 @@ def get_heat_map(genes,filepath):
 
     
     
-
-if __name__ == "__main__":
-    
-    def render(content):
-        return dbc.Container(
-            fluid=True,
-            className="p-0 m-0 h-100",
-            children=[
-                dbc.Row(
-                    className="g-0 h-100",  # g-0 removes gutters, h-100 for full height
-                    children=[
-                        # Main content area
-                        dbc.Col(
-                            id={"type": "main-content", "uid":"uid"},
-                            width=9,
-                            className="bg-danger d-flex flex-column overflow-hidden p-2",
-                            children=[                        
-                                # html.Div(
-                                #     className="d-flex justify-content-center align-items-center h-100",
-                                #     children=dbc.Spinner(
-                                #         size="lg",
-                                #         color="primary",
-                                #         fullscreen=True
-                                #     )
-                                # ),
-                            ]
-                        ),
-                        # Sidebar area - 25% (width 3)
-                        dbc.Col(
-                            width=3,
-                            className="bg-secondary text-white p-3 h-100 overflow-auto",
-                            children=[
-                                dbc.Card(
-                                    className="mb-2",
-                                    children=[
-                                    dbc.CardHeader("Card"),
-                                    dbc.CardBody(content) 
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-    
-    
-    
-    
-    
-    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-    
-    
-    app.layout = render([
-        tabs(
-                id="tabs-demo",
-                options=[
-                    {"label": "Table", "tab_id": "table", "children": table(id="table")},
-                    {"label": "Tab 2", "tab_id": "tab-2", "children": html.Div("Content 2")},
-                ],
-            )
-    ])
-    
-    
-    
-    
-    
-    
-    
-    
-    # app.layout = render([
-    #     tabs(
-    #             id="tabs-demo",
-    #             options=[
-    #                 {"label": "Tab 1", "tab_id": "tab-1", "children": html.Div("Content 1")},
-    #                 {"label": "Tab 2", "tab_id": "tab-2", "children": html.Div("Content 2")},
-    #             ],
-    #         )
-    # ])
-    
-    
-
-    # app.layout = dbc.Container(
-    #     [
-    #         html.H2("PyCoregnet UI Components Demo"),
-    #         tabs(
-    #             id="tabs-demo",
-    #             options=[
-    #                 {"label": "Tab 1", "tab_id": "tab-1", "children": html.Div("Content 1")},
-    #                 {"label": "Tab 2", "tab_id": "tab-2", "children": html.Div("Content 2")},
-    #             ],
-    #             value="tab-1"
-    #         ),
-    #         html.Hr(),
-    #         html.H4("Demo Table"),
-    #         table(
-    #             id="demo-table",
-    #             data=[
-    #                 {"Name": "Alice", "Age": 30},
-    #                 {"Name": "Bob", "Age": 25},
-    #                 {"Name": "Charlie", "Age": 35}
-    #             ],
-    #             columns=[
-    #                 {"name": "Name", "id": "Name"},
-    #                 {"name": "Age", "id": "Age"}
-    #             ]
-    #         ),
-    #     ],
-    #     fluid=True,
-    #     className="p-4"
-    # )
-
-    app.run(debug=True)

@@ -49,13 +49,20 @@ from typing import Literal
 
 cyto.load_extra_layouts()
 
-from updated.components.ui import btn_grp, thresh_input, dropdown, tabs, table, get_heat_map
+from updated.components.ui import btn_grp, thresh_input, dropdown, tabs, table, get_heat_map,network_stats
 import utils
 
 
 DUMMY = html.Div("DUMMY", className="d-flex flex-1 bg-danger")
 
 _NC_CONFIG = [
+    {
+        "card": "Network Stats",
+        "id": "network_stats",
+        "func": network_stats,
+        "parms": {
+        }
+    },
     {
         "card": "Graph controls",
         "id": "selection_mode",
@@ -113,7 +120,18 @@ _NC_CONFIG = [
             "label": "Highlight Node",
         }
     },
-        
+    {
+        "card": "Node Inspector",
+        "id": "inspector_tabs",
+        "func": tabs,
+        "parms": {
+            "options" : [
+                {"label": "Tab 1", "value": "1",  "tab_id":"" },
+                {"label": "Tab 2", "value": "2",  "tab_id":"" },
+            ],
+            "value" : None
+        }
+    },        
 ]
 
 class UIControls:
@@ -126,8 +144,8 @@ class UIControls:
         backtracking_mode : bool = False,
         threshold_input : bool = False,
         options_dropdown: bool = False,
-        inspector_tab : bool = False,
-        # inspector_tab : dict = None,
+        inspector_tabs : list = None,
+        network_stats : bool = False,
         ): 
           
         # Will be assigned in the UILayout class
@@ -143,7 +161,6 @@ class UIControls:
             nc for nc in _NC_CONFIG
             if nc["id"] in defined_parms
         ]
-        
         
     def pack(self, uid, options_dropdown):
         
@@ -170,7 +187,7 @@ class UIControls:
         # Iterate through the configuration list.
         for nc in self._CONTROLS_CONFIG:
             card = nc['card']
-            
+
             # Unique ID dictionary for the component.
             comp_id = {"type": nc["id"], "uid": self.uid}
             
@@ -236,6 +253,15 @@ class CytoGraph:
         self.stylesheet = stylesheet
         self.layout_config = layout_config
         self.dropdown_options = dropdown_options
+        self.store = {
+            "selected": [],
+            "metadata": {
+                "total_nodes": 0,
+                "total_edges": 0,
+                "selected_nodes": 0,
+                "selected_edges": 0,
+            },
+        }
         
         
         # self._store = {
@@ -252,15 +278,8 @@ class CytoGraph:
         # "role" : self.preprocess_role,
     @property
     def _store(self):
-        store = {
-            "selected": [],
-            "metadata": {
-                "total_nodes": 0,
-                "total_edges": 0,
-                "selected_nodes": 0,
-                "selected_edges": 0,
-            },
-        }
+        store = self.store
+        store.update({"uid": self.uid})
 
         if self.threshold is not None:
             store.update({
@@ -282,6 +301,13 @@ class CytoGraph:
         if self.preprocess_function:
             #NOTE we can cache this
             pre_data = self.preprocess_function(utils.grn,self.preprocess_role)    
+            
+            # NOTE NOT STABLE
+            app = dash.get_app()
+            cache = app.server.config['SERVER_CACHE']      
+            cache.set(self.uid,pre_data)
+    
+            
             if not self.threshold:
                 self.threshold = self.threshold_function(pre_data,self.threshold_ratio)
                 
@@ -308,13 +334,14 @@ class CytoGraph:
         
         return [cyto.Cytoscape(
             id={"type": "network-graph", "uid": self.uid},
-            style={'flex-grow': '1', 'box-sizing': 'border-box'},
+            style={'flex-grow': '1', 'box-sizing': 'border-box', 'border-radius': '8px', 'box-shadow': '0 4px 6px rgba(0, 0, 0, 0.1)'},
             minZoom=0.1,
             maxZoom=2,
             elements=self.elements,
             stylesheet=self.stylesheet,
             layout=self.layout_config,
-        )] 
+            className="bg-light"
+        )]
 
 
 
@@ -361,7 +388,7 @@ class UILayout:
                         dbc.Col(
                             id={"type": "main-content", "uid": self.uid},
                             width=self.content_width,
-                            className=" d-flex flex-column overflow-hidden p-2",
+                            className=" d-flex flex-column overflow-hidden p-2 bg-secondary",
                             children=self.CONTENT.unpack()
                         ) ,
                         # Sidebar area - 25% (width 3)
@@ -459,7 +486,7 @@ def sync(
             # 'both' allows all node types, and None type passes through
             
             if sel_mode == 'single':
-                store["selected"] = node_id
+                store["selected"] = [node_id]
                 return store, node_id
             elif sel_mode == 'multiple':
                 
@@ -676,21 +703,108 @@ def update_graph_thresh(n_clicks,value,store):
     store = get_first(store)
 
     from updated.graph import adj
-    print(value)
+    
     data = adj.create_network(
         adj.get_genes(utils.grn,store['preprocess_role']),
         value
     )
-    print(data)
+    
     
     return data['nodes'] + data['edges']
 
     
     
+@callback(
+    [
+    Output({"type": "total_nodes", "uid": MATCH}, "children"),
+    Output({"type": "total_edges", "uid": MATCH}, "children"),
+    Output({"type": "selected_nodes", "uid": MATCH}, "children"),
+    Output({"type": "selected_edges", "uid": MATCH}, "children"),
+    ],
+    Input({"type": "store", "uid": MATCH}, "data"),
+    State({"type": "network-graph", "uid": MATCH}, "elements"),
+)
+def update_network_stats(store,elements):
+    selected = store['selected']
+    metadata = store['metadata']
+    t=0
+    tf = 0
     
+    for e in elements:
+        data = e['data']
+        source = data.get("source",None)
+        if not source:
+            pass
+        target = data.get("target",None)
+        if source in selected:
+            t=t+1
+        elif target in selected:
+            tf=tf+1
+            
+    total = t+tf        
+        
     
+    return metadata['total_nodes'],metadata['total_edges'],len(selected),total
+
     
+
+@callback(
+    Output({"type": "inspector_tabs_content", "uid": MATCH}, "children"),
+    Input({"type": "inspector_tabs", "uid": MATCH}, "active_tab"),
+    Input({"type": "store", "uid": MATCH}, "data"),
+    State({"type": "network-graph", "uid": MATCH}, "elements"),
+    prevent_initial_call=True
+)
+def update_inspector_tabs(active_tab, store,___):
+    """Update inspector tabs based on active tab and store data"""
+    print(active_tab)
+
+    if not active_tab:
+        return no_update
     
+    selected = store.get("selected",None)
     
+    if not selected:
+        return html.Div(
+            "Please select a node",
+            className="d-flex align-items-center justify-content-center h-100"
+        )
+
+    
+    if active_tab == "table":
+        from graph.fullbipartite import regulation
+        return regulation(selected,"./grn.json")
+    elif active_tab == "heatmap":
+        from graph.fullbipartite import get_heat_map
+        return get_heat_map(selected,"./CIT_BLCA_EXP.csv")
+    elif active_tab == "adj_table":
+        from dash import get_app
+        app = get_app()
+        cache = app.server.config["SERVER_CACHE"]
+        pre_data = cache.get(store['uid'])
+        
+        if not pre_data:
+            raise NameError("Getting cache has failed")
+        
+        edges = [e.copy() for e in ___ if 'source' in e['data']]
+        columns=[
+            {"name": "TF", "id": "Node"},
+            {"name": "CO", "id": "shared"},
+            {"name": "STC", "id": "count"},
+        ]
+
+        from updated.graph.adj import by_update_info_panel
+        
+        # NOTE FULL CONNECTIONS OR CURRENT ?
+        return by_update_info_panel(pre_data,selected,edges,store['threshold'],columns)
+    
+
+
+
+
+
     return no_update
+    
+    
+
 

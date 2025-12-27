@@ -1,5 +1,5 @@
 import dash
-from dash import dcc
+from dash import dcc,dash_table
 import random
 import plotly.graph_objects as go
 import pandas as pd
@@ -123,3 +123,79 @@ def regulation(selected_nodes,grn_path):
             {"name": partner_label, "id": "Partner"},
             ]
     )
+    
+
+
+def regulation(selected_nodes,grn_path):
+    rows = []
+    partner_label = "Partner"
+    
+    grn_data = load_grn_data(grn_path)
+    bygene=grn_data.get('adjlist').get('bygene')
+    bytf=grn_data.get('adjlist').get('bytf')
+    
+    for node in selected_nodes:
+        if node in bytf:
+            # TF perspective: list its targets
+            acts = bytf.get(node, {}).get('act', []) or []
+            reps = bytf.get(node, {}).get('rep', []) or []
+            rows.extend({"Partner": tgt, "Regulation": "Positive", "Source": node,"partner_label":"TF"} for tgt in acts)
+            rows.extend({"Partner": tgt, "Regulation": "Negative", "Source": node,"partner_label":"TF"} for tgt in reps)
+        elif node in bygene:
+            # Gene perspective: list its regulators (TFs)
+            acts = bygene.get(node, {}).get('act', []) or []
+            reps = bygene.get(node, {}).get('rep', []) or []
+            rows.extend({"Partner": tf, "Regulation": "Positive", "Source": node,"partner_label":"Target"} for tf in acts)
+            rows.extend({"Partner": tf, "Regulation": "Negative", "Source": node,"partner_label":"Target"} for tf in reps)
+        else:
+            # Unknown node id — ignore
+            pass
+        
+    columns=[
+        {"name": "Selected Node", "id": "Source"},
+        {"name": partner_label, "id": "Partner"},
+        ]
+    
+    return dash_table.DataTable(
+            data=rows,
+            columns=columns,
+            page_size=10,
+            style_cell={
+                'textAlign': 'center',
+                'fontFamily': "'Inter', sans-serif",
+                'fontSize': '14px',
+                'borderBottom': '1px solid #ccc',
+                'borderLeft': 'none',
+                'borderRight': 'none',
+                'borderTop': 'none'
+            },
+            style_header={
+                'fontWeight': 'bold',
+                'backgroundColor': 'white',
+                'borderBottom': '1px solid #ccc',
+                'borderLeft': 'none',
+                'borderRight': 'none',
+                'borderTop': 'none'
+            },
+            style_data_conditional=[
+                {
+                    'if': {'column_id': 'Partner', 'filter_query': '{Regulation} = Positive'},
+                    'backgroundColor': '#90EE90',
+                    'color': 'black',
+                },
+                {
+                    'if': {'column_id': 'Partner', 'filter_query': '{Regulation} = Negative'},
+                    'backgroundColor': '#FFB6C6',
+                    'color': 'black',
+                },
+                {
+                    'if': {'column_id': 'Source', 'filter_query': '{partner_label} = TF'},
+                    'color': "#46C7F3",
+                },
+                {
+                    'if': {'column_id': 'Source', 'filter_query': '{partner_label} = Target'},
+                    'color': "#FFBB00",
+                },
+            ],
+        )
+

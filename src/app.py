@@ -1,4 +1,5 @@
 import uuid
+from flask import Flask
 import dash
 from dash import Dash, dcc, html, callback, Input, Output, no_update
 import dash_cytoscape as cyto
@@ -6,17 +7,27 @@ import dash_bootstrap_components as dbc
 from flask_caching import Cache
 cyto.load_extra_layouts()
 
-app = dash.Dash(__name__, suppress_callback_exceptions=True,external_stylesheets=[dbc.themes.BOOTSTRAP], use_pages=True)
-server = app.server
+server = Flask(__name__)
 
 # Local-friendly cache (persists between runs). For Redis, swap config.
-cache = Cache(server, config={
-    "CACHE_TYPE": "FileSystemCache",
-    "CACHE_DIR": ".cache",
+config = {
+    "DEBUG": True,          # some Flask specific configs
+    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
     "CACHE_DEFAULT_TIMEOUT": 3600
-})
-app.server.config["APP_CACHE"] = cache
+}
+# tell Flask to use the above defined config
+server.config.from_mapping(config)
+cache = Cache(server)
+server.config['SERVER_CACHE']=cache
 
+app = dash.Dash(
+    __name__,
+    server=server,
+    suppress_callback_exceptions=True,
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    use_pages=True,
+    url_base_pathname="/"
+)
 
 #  Common element in every page
 navbar = dbc.Navbar(
@@ -48,8 +59,6 @@ APP_STYLE = {
     "padding": "0",
     "backgroundColor": "#f8f9fa"
 }
-
-
 
 #  Main layout
 app.layout = dbc.Container(
