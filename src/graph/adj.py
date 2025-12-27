@@ -1,52 +1,42 @@
+from typing import Literal
 from itertools import combinations
 from components.backend import table
 
 
-def get_entity_partners(grn_data : dict, key:str):
-    entity_partners = {}
+def get_genes(grn_data : dict, role: str = Literal['bygene','bytf'],):
+    genes = {}
     adjlist = grn_data.get('adjlist', {})
-    entity_dict = adjlist.get(key, {})
+    entity_dict = adjlist.get(role, {})
 
     for entity, partner_info in entity_dict.items():
         partners = set(partner_info.get('act', []) + partner_info.get('rep', []))
-        entity_partners[entity] = partners
+        genes[entity] = partners
 
-    return entity_partners
-
-
-def default_threshold(connections : dict,threshold:float = None, uid:str = None):
-    if threshold is None:
-        if uid=='coregulator':
-            threshold=0.1
-        else:
-            threshold=0.5
-    max_targets = max((len(targets) for targets in connections.values()), default=1)
-    coreg_threshold = int(threshold * max_targets)
-    return coreg_threshold
+    return genes
 
 
-def create_network(entity_to_partners, threshold=None, uid=None):
-    entities = list(entity_to_partners.keys())
+def default_threshold(genes : dict, threshold_ratio : float = None):
+    max_targets = max((len(targets) for targets in genes.values()), default=1)
+    threshold = int(threshold_ratio * max_targets)
+    return threshold
+
+
+def create_network(genes : dict, threshold : float = None):
+    entities = list(genes.keys())
     nodes_data = []
     edges_data = []
     edge_ids = set()
 
-    # if threshold is None:
-    #     max_partners = max((len(partners) for partners in entity_to_partners.values()), default=1)
-    #     threshold = 0.50 * max_partners
-
-    if threshold is None:
-        threshold = default_threshold(entity_to_partners,uid= uid)
-
     entities_in_graph = set()
 
     for entity1, entity2 in combinations(entities, 2):
-        partners1 = entity_to_partners.get(entity1, set())
-        partners2 = entity_to_partners.get(entity2, set())
+        partners1 = genes.get(entity1, set())
+        partners2 = genes.get(entity2, set())
         shared_partners = partners1.intersection(partners2)
         shared_count = len(shared_partners)
 
         if shared_count >= threshold:
+
             edge_id = tuple(sorted((entity1, entity2)))
             if edge_id not in edge_ids:
                 edges_data.append({
@@ -64,7 +54,7 @@ def create_network(entity_to_partners, threshold=None, uid=None):
     nodes_to_include = entities
 
     for entity in nodes_to_include:
-        partner_count = len(entity_to_partners.get(entity, []))
+        partner_count = len(genes.get(entity, []))
         nodes_data.append({
             'data': {
                 'id': entity,
@@ -73,10 +63,10 @@ def create_network(entity_to_partners, threshold=None, uid=None):
             }
         })
 
-    return {'nodes': nodes_data, 'edges': edges_data},threshold
+    return {'nodes': nodes_data, 'edges': edges_data}
 
-def options(entity_to_partners):
-    return [{'label': n['data']['id'], 'value': n['data']['id']} for n in entity_to_partners]
+def options(genes):
+    return [{'label': n['data']['id'], 'value': n['data']['id']} for n in genes]
 
 
 def by_update_info_panel(connections, selected_nodes, edges, threshold, columns):

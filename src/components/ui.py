@@ -1,33 +1,13 @@
 import dash
 import dash_bootstrap_components as dbc
-from dash import html
-from dash import dcc
+from dash import html, dcc, dash_table
 
-def tabs(id: str, options: list, value: str):
-    return dbc.Tabs(
-        id=id,
-        # active_tab=value,
-        active_tab=options[0]['tab_id'], #The active tab is the first element of the options list
-        className="justify-content-center text-black border-0",
-        children=[
-            dbc.Tab(
-                label=option['label'],
-                tab_id=option['tab_id'],
-                labelClassName='text-black border-0',
-                activeLabelClassName='text-black border-0 border-bottom border-primary border-3',
-                activeTabClassName='text-black border-0'
-            ) for option in options
-        ]
-    )
-    
-    
-
-def button_group(id: str, label: str, options: list, value: str, visible = True):
-
+def btn_grp(id: str, label: str, options: list, value: str):
+    """Custome Button Group """
     return dbc.Row(
         [
             dbc.Col(
-                dbc.Label(label, className="small text-center "),width="auto"
+                dbc.Label(label, className="small text-cxenter ")
             ),
             dbc.Col(
                 dbc.RadioItems(
@@ -38,75 +18,186 @@ def button_group(id: str, label: str, options: list, value: str, visible = True)
                     labelCheckedClassName="active btn-sm",
                     options=options,
                     value=value,
-                ),
-                width="auto"
+                )
             ),
         ],
         justify="between",
         align="center",
-        className="mb-3" if visible else "d-none"
+        className="mb-3" 
     )
 
-def threshold_input(id: str, label: str, visible=True):
-    btn_id = {}
-    btn_id["type"]  = f"{id["type"]}-btn"
-    btn_id['uid'] = id['uid']
+def thresh_input(id: dict, label: str):
+    btn_id = id.copy()
+    btn_id['type'] = btn_id['type'] + '_btn'
+    return dbc.Row(
+        [
+            dbc.Col(
+                dbc.Input(
+                    id=id,
+                    type='number',
+                    min=1,
+                    size="sm",
+                    placeholder=label
+                )
+            ),
+            dbc.Col(
+                dbc.Button(
+                    ["Update Threshold"],
+                    id=btn_id,
+                    size="sm",
+                    color="outline-primary"
+                )
+            ),
+        ],
+        align="center",
+        justify="between",
+        className="mb-3"
+    )
+
+def dropdown(id : str, label : str, options = []):
     return dbc.Row([
-        dbc.Col(dbc.Input(id=id, type='number', value=label, min=1,size="sm", placeholder=label), width=5),
-        dbc.Col(dbc.Button(["Update Threshold"], id=btn_id, size="sm", color="outline-primary"), width="auto"),
-    ], align="center", justify="between", className="mb-3" if visible else "d-none")
+        dbc.Row(html.Label(label), className="mb-2"),
+        dbc.Row(dcc.Dropdown(id=id,className="mb-2",options=options))
+        ])
 
 
-def stat_card():
-    """
-        @callback(
-        [Output("total_nodes", "children"),
-        Output("total_edges", "children"),
-        Output("selected_nodes", "children"),
-        Output("selected_edges", "children")],
-        Input("node-mode-btns", "value"),  # Optional, if using selection
-    )
-    def update_stats(figure):
-        return 930,7902,1,128000    
-    """
-    
-    def box(label, num_id):
-        return dbc.Card(
-            dbc.CardBody([
-                html.H6("0",id=num_id, className="text-center fw-bold"),
-                html.Small(label, className="text-center text-muted d-block")
-            ]),
-            className="h-100"
+def table(id):
+    return dash_table.DataTable(
+            id=id,
+            page_size=10,
+            style_cell={
+                'textAlign': 'center',
+                'fontFamily': "'Inter', sans-serif",
+                'fontSize': '14px',
+                'borderBottom': '1px solid #ccc',
+                'borderLeft': 'none',
+                'borderRight': 'none',
+                'borderTop': 'none'
+            },
+            style_header={
+                'fontWeight': 'bold',
+                'backgroundColor': 'white',
+                'borderBottom': '1px solid #ccc',
+                'borderLeft': 'none',
+                'borderRight': 'none',
+                'borderTop': 'none'
+            },
         )
 
-    return dbc.Card(className="mb-2",children=[
-            dbc.CardHeader("Network stats"),
-            dbc.CardBody([
-                dbc.Row([
-                    dbc.Col(box("Total Nodes", "total_nodes"), width=6),
-                    dbc.Col(box("Total Edges", "total_edges"), width=6),
-                ], className="mb-2", align="stretch"),
-                
-                dbc.Row([
-                    dbc.Col(box("Selected Nodes", "selected_nodes"), width=6),
-                    dbc.Col(box("Selected Edges", "selected_edges"), width=6),
-                ], align="stretch"),
-            ])
-            ])
 
-
+def tabs(id: str, options: list ):#, value: str):
+    return dbc.Tabs(
+        id=id,
+        className="justify-content-center text-black border-0",
+        active_tab=None,
+        # active_tab=value,
+        children=[
+            dbc.Tab(
+                children=option['children'],
+                label=option['label'],
+                tab_id=option['tab_id'],
+                # tab_id={"type": option['tab_id'], "uid": id['uid']},
+                labelClassName='text-black border-0',
+                activeLabelClassName='text-black border-0 border-bottom border-primary border-3',
+                activeTabClassName='text-black border-0'
+            ) for option in options
+        ]
+    )
     
-def stat_box(stats: list):
-    def cell(text,id):
-
-        return dbc.Col([
-            dbc.Row([
-            dbc.Col([html.Small(text, className="text-center text-muted fw-bold")], width=6, className="d-flex justify-content-center align-items-center"),
-            dbc.Col([html.Div(id=id, className="p-2 bg-secondary text-center text-white rounded fw-bold")], width=6, className="d-flex justify-content-center align-items-center"),
-            ])
-        ], width=6, className="d-flex justify-content-center align-items-center")
+# def tabs(id: str, options: list ):#, value: str):
+def tabs(id: str, options: list, value: str):
+    return dbc.Card([
+            dbc.CardHeader([
+                dbc.Tabs(
+                id=id,
+                className="d-flex justify-content-evenly text-black border-0",
+                # active_tab=None,
+                children=[
+                    dbc.Tab(
+                        label=option['label'],
+                        # tab_id=option['tab_id'],
+                        tab_id=valueId,
+                        labelClassName='text-black border-0',
+                        activeLabelClassName='text-black border-0 border-bottom border-primary border-3',
+                        activeTabClassName='text-black border-0'
+                    ) for option,valueId in zip(options,value)
+                ]
+            )
+        ], style={"backgroundColor": "transparent"}),    
+        dbc.CardBody(id={"type": f"{id['type']}_content", "uid": id['uid']}, style={"backgroundColor": "transparent", "height": "50vh"}),
+    ], style={"backgroundColor": "transparent"}, className="d-flex flex-1")
     
-    return dbc.Row([
-        cell(stat["name"], stat["id"]) for stat in stats
+    
+
+def network_stats(id: str):
+    uid = id['uid']
+    return dbc.Container([
+        dbc.Row([
+            dbc.Col(dbc.Label("Total: ", className="small text-cxenter")),
+            dbc.Col([
+                html.Span(id={"type": "total_nodes", "uid": uid}, children="0"),
+                " nodes | ",
+                html.Span(id={"type": "total_edges", "uid": uid}, children="0"),
+                " edges"
+            ], className="small text-cxenter"),
+        ], className="flex-nowrap text-nowrap"),
+        dbc.Row([
+            dbc.Col(dbc.Label("Selected: ", className="small text-cxenter")),
+            dbc.Col([
+                html.Span(id={"type": "selected_nodes", "uid": uid}, children="0"),
+                " nodes | ",
+                html.Span(id={"type": "selected_edges", "uid": uid}, children="0"),
+                " edges"
+            ], className="small text-cxenter"),
+        ], className="flex-nowrap text-nowrap"),
     ])
+    
+
+# id={"type": "total_edges", "uid": id}
+# id={"type": "selected_nodes", "uid": id}
+# id={"type": "selected_edges", "uid": id}
+
+def get_heat_map(genes,filepath):
+    import pandas as pd
+    import plotly.graph_objects as go
+    ne=pd.read_csv(filepath,index_col=0)
+    if isinstance(genes,str):
+        genes=[genes]
+
+    selected_df = ne.loc[genes].T
+    global_mean=ne.values.mean()
+    z_scores=selected_df-global_mean
+    zmin = z_scores.min().min()
+    zmax = z_scores.max().max()
+
+    n_genes = len(z_scores.columns)
+    n_samples = len(z_scores.index)
+    
+    heatmap_width = min(1000, max(300, 20 * n_genes))
+    heatmap_height = min(900, max(300, 20 * n_samples))
+
+    heatmap=go.Figure(data=go.Heatmap(
+        z=z_scores.values,
+        x=z_scores.columns,
+        y=z_scores.index,
+        zmin=zmin,
+        zmax=zmax,
+        colorscale=[
+            [0, "red"],   
+            [0.5, "black"], 
+            [1, "green"]   
+        ]
+    ))
+    heatmap.update_layout(
+        xaxis=dict(showticklabels=False),
+        yaxis=dict(showticklabels=False),
+        xaxis_title="Genes",
+        yaxis_title="Samples"
+    
+    )
+    return dcc.Graph(figure=heatmap)
+    
+    
+
+    
     

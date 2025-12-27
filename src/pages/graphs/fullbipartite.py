@@ -1,21 +1,11 @@
 import dash
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
-from functools import partial
-from typing import Literal
-
-cyto.load_extra_layouts()
-
-from updated.components.ui import btn_grp, thresh_input, dropdown, tabs, table, get_heat_map
-import utils
-
-dash.register_page(__name__, path='/dashboard/tfull')
-
 from graph import fullbipartite
 from assets import stylesheet
+from layout import UIControls, CytoGraph, UILayout
 
-from layout.common import *
-
+dash.register_page(__name__, path='/graphs/fullbipartite')
 
 layout = dbc.Spinner(size="lg",color="primary")
 
@@ -25,10 +15,6 @@ uicontrols = UIControls(
     options_dropdown=True,
     inspector_tabs=['table','heatmap'],
     network_stats=True
-    
-    # backtracking_mode=True,
-    # threshold_input=True,
-    
 )
 
 cytograph = CytoGraph(
@@ -38,7 +24,6 @@ cytograph = CytoGraph(
     dropdown_options=fullbipartite.options
 )
 
-
 uilayout = UILayout(
     uid='full',
     cytograph=cytograph,
@@ -46,4 +31,3 @@ uilayout = UILayout(
 )
 
 layout = uilayout.render()
-# uilayout.register_callbacks(dash.get_app())

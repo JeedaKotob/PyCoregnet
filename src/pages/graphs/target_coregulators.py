@@ -1,26 +1,14 @@
-from functools import partial
-
 import dash
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
-from functools import partial
-from typing import Literal
-
-cyto.load_extra_layouts()
-
-from updated.components.ui import btn_grp, thresh_input, dropdown, tabs, table, get_heat_map
-import utils
-
-dash.register_page(__name__, path='/dashboard/tcoregs')
-
-from updated.graph import adj
 from assets import stylesheet
+from layout import UIControls, CytoGraph, UILayout
 
-from layout.common import *
+from graph import adj 
 
+dash.register_page(__name__, path='/graphs/TargetCoregulators')
 
 layout = dbc.Spinner(size="lg",color="primary")
-
 
 graph_layout={
     'name': 'cose',
@@ -28,9 +16,9 @@ graph_layout={
     'fit': True,
     'padding': 40,
     'animate': False,
-    'nodeRepulsion': 2500000,
+    'nodeRepulsion': 1000000,
     'edgeElasticity': 100,
-    'gravity': 70,
+    'gravity': 50,
     'numIter': 1000
 }
 
@@ -39,18 +27,16 @@ uicontrols = UIControls(
     threshold_input=True,
     options_dropdown=True,
     inspector_tabs = ['adj_table'],
-    network_stats=True,
-    
+    network_stats=True,   
 )
-
 
 cytograph = CytoGraph(
     preprocess_function=adj.get_genes,
-    preprocess_role="bytf",
+    preprocess_role="bygene",
     creation_function=adj.create_network,
     threshold_function=adj.default_threshold,
     threshold = None,
-    threshold_ratio = 0.1,
+    threshold_ratio = 0.5,
     stylesheet=stylesheet.coreg_network_stylesheet,
     layout_config=graph_layout,
     dropdown_options=adj.options
@@ -58,10 +44,9 @@ cytograph = CytoGraph(
 
 
 uilayout = UILayout(
-    uid='coregs',
+    uid='coregulated',
     cytograph=cytograph,
     controls=uicontrols
 )
 
 layout = uilayout.render()
-# uilayout.register_callbacks(dash.get_app())

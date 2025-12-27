@@ -6,7 +6,6 @@ import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 import pandas as pd
 
-from datahandler import GRNHandler
 
 dash.register_page(__name__, path='/')
 

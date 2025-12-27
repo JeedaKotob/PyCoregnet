@@ -33,15 +33,14 @@ from dash import Dash, Input, Output, State, callback, callback_context, ctx, dc
 from assets import stylesheet
 from functools import partial
 from graph import fullbipartite
-from layout.baselayout import BaseNetworkGraph
-from layout.base import NetworkLayout
+
 import utils
 
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-dash.register_page(__name__, path='/dashboard/heatmap')
+dash.register_page(__name__, path='/heatmaps/heatmap')
 
 """
 def get_heat_map(filepath = "./CIT_BLCA_EXP.csv"):
