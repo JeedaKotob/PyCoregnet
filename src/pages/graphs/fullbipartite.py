@@ -5,7 +5,7 @@ from graph import fullbipartite
 from assets import stylesheet
 from layout import UIControls, CytoGraph, UILayout
 
-dash.register_page(__name__, path='/graphs/fullbipartite')
+dash.register_page(__name__, path='/graphs/FullBipartite')
 
 layout = dbc.Spinner(size="lg",color="primary")
 

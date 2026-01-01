@@ -35,7 +35,7 @@ from plotly.figure_factory._dendrogram import _Dendrogram
 from plotly.subplots import make_subplots
 from .heatmap import example_layout,render_layout
 # from .ps import xaxis,yaxis
-dash.register_page(__name__, path='/heatmaps/dynamic')
+dash.register_page(__name__, path='/heatmaps/Dynamic')
 
 filepath = "./CIT_BLCA_EXP.csv"
 df = pd.read_csv(filepath,index_col=0)

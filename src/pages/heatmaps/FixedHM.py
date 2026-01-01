@@ -34,7 +34,7 @@ from plotly.figure_factory._dendrogram import _Dendrogram
 from plotly.subplots import make_subplots
 from .heatmap import example_layout
 # from .ps import xaxis,yaxis
-dash.register_page(__name__, path='/heatmaps/FixedHM')
+dash.register_page(__name__, path='/heatmaps/Fixed')
 
 
 filepath = "./CIT_BLCA_EXP.csv"

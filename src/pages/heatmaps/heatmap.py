@@ -40,7 +40,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-dash.register_page(__name__, path='/heatmaps/heatmap')
+dash.register_page(__name__, path='/heatmaps/Heatmap')
 
 """
 def get_heat_map(filepath = "./CIT_BLCA_EXP.csv"):

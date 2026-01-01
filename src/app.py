@@ -1,11 +1,13 @@
 import uuid
 from flask import Flask
 import dash
-from dash import Dash, dcc, html, callback, Input, Output, no_update
+from dash import Dash, dcc, html, callback, Input, Output, no_update, State, callback_context
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 from flask_caching import Cache
 cyto.load_extra_layouts()
+
+from components.navbar import get_navbar
 
 server = Flask(__name__)
 
@@ -29,144 +31,6 @@ app = dash.Dash(
     url_base_pathname="/"
 )
 
-""" 
-#  Common element in every page
-navbar = dbc.Navbar(
-    children=[
-        dbc.NavbarBrand("PyCoregnet", href="/", className="ms-3"),
-        dbc.Nav(
-            [
-                dbc.NavLink(
-                    html.Div(page["name"], className="ms-2"),
-                    href=page["path"],
-                    active="exact",
-                )
-                for page in dash.page_registry.values()
-            ],
-            className="ms-auto me-3",
-            navbar=True,
-        ),
-    ],
-    color="dark",
-    dark=True,
-    className="px-0 w-100",
-)
-"""
-
-
-
-
-
-
-"""
-#  Common element in every page
-# Group pages by parent directory
-pages_by_parent = {}
-for page in dash.page_registry.values():
-    path = page["path"]
-    if path == "/":  # Skip homepage
-        continue
-    parent = path.split("/")[1] if "/" in path else "other"
-    if parent not in pages_by_parent:
-        pages_by_parent[parent] = []
-    pages_by_parent[parent].append(page)
-
-# Create navigation items with dropdowns
-nav_items = []
-for parent, pages in sorted(pages_by_parent.items()):
-    if len(pages) > 1:
-        # Create dropdown for multiple pages with same parent
-        nav_items.append(
-            dbc.DropdownMenu(
-                label=parent.capitalize(),
-                children=[
-                    dbc.DropdownMenuItem(
-                        page["name"],
-                        href=page["path"],
-                    )
-                    for page in sorted(pages, key=lambda p: p["name"])
-                ],
-                nav=True,
-                in_navbar=True,
-            )
-        )
-    else:
-        # Single page, no dropdown needed
-        nav_items.append(
-            dbc.NavLink(
-                pages[0]["name"],
-                href=pages[0]["path"],
-                active="exact",
-            )
-        )
-
-navbar = dbc.Navbar(
-    children=[
-        dbc.NavbarBrand("PyCoregnet", href="/", className="ms-3"),
-        dbc.Nav(
-            nav_items,
-            className="ms-auto me-3",
-            navbar=True,
-        ),
-    ],
-    color="dark",
-    dark=True,
-    className="px-0 w-100",
-)
-"""
-
-dropdowns = {}
-for page in dash.page_registry.values():
-    path = page["path"]
-    pc = path.split("/")[1:]
-    if len(pc) > 1:
-        parent,child = pc
-        if parent not in dropdowns:
-            dropdowns[parent] = []
-        dropdowns[parent].append(child)
-
-
-ddowns = [    
-    dbc.DropdownMenu(
-        label=parent.capitalize(),
-        children=[
-            dbc.DropdownMenuItem(
-                c,
-                href=f"/{parent}/{c}"
-            ) for c in child
-        ],
-        nav=True,
-        in_navbar=True,
-        className="text-white me-3"
-    ) for parent, child in dropdowns.items()
-]
-
-navbar = dbc.Navbar(
-    children=[
-        dbc.NavbarBrand("PyCoregnet", href="/", className="ms-3"),
-        dbc.Nav(
-            [
-                dbc.NavLink(
-                    html.Div(page["name"], className="ms-2"),
-                    href=page["path"],
-                    active="exact",
-                )
-                for page in dash.page_registry.values() if page["path"].count("/") < 2
-            ],
-            className="ms-auto me-3",
-            navbar=True,
-        ),
-    ],
-    color="dark",
-    dark=True,
-    className="px-0 w-100",
-)
-
-navbar.children.extend(ddowns)
-navbar.children.append(html.Div(className="mx-5"))
-
-
-
 # Responsible to make a desktop-app like structure
 APP_STYLE = {
     "height": "100vh",
@@ -175,6 +39,8 @@ APP_STYLE = {
     "padding": "0",
     "backgroundColor": "#f8f9fa"
 }
+
+navbar = get_navbar(dash.page_registry.values())
 
 #  Main layout
 app.layout = dbc.Container(
@@ -189,6 +55,59 @@ app.layout = dbc.Container(
         )
     ],
 )
+
+
+# @callback(
+#     Output("navbar-content", "className"),
+#     Input("navbar-title", "n_clicks"),
+#     State("navbar-content", "className"),
+#     prevent_initial_call=True    
+# )
+# def toggle_navbar_dropdowns(title ,current_class):
+    
+#     if title:
+#         if current_class and "d-none" in current_class:
+#             # Show the dropdowns
+#             return "ms-auto"
+#         else:
+#             # Hide the dropdowns
+#             return "ms-auto d-none"
+
+    
+#     return no_update
+
+
+
+@callback(
+    Output("navbar", "children"),
+    Input("navbar-title", "n_clicks"),
+    Input("navbar-title-sm", "n_clicks"),
+    State("navbar", "children"),
+    prevent_initial_call=True    
+)
+def toggle_navbar_dropdowns(title, title_sm, children):
+    ctx = callback_context
+    
+    if not ctx.triggered:
+        return no_update
+    
+    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if triggered_id == 'navbar-title':
+        children[0]['props']['className'] = children[0]['props']['className'].replace("d-none", "")
+        for e in children[1:]:
+            e['props']['className'] = e['props']['className'] + " d-none"
+        return children
+    elif triggered_id == 'navbar-title-sm':
+        children[0]['props']['className'] = children[0]['props']['className'] + " d-none"
+        for e in children[1:]:
+            e['props']['className'] = e['props']['className'].replace("d-none", "")
+        return children
+    
+    return no_update
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True,port=8050)
