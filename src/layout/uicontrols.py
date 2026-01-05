@@ -92,7 +92,7 @@ _NC_CONFIG = [
         }
     },
     {
-        "card": "Node Inspector",
+        "card": "Insights",
         "id": "inspector_tabs",
         "func": tabs,
         "parms": {
@@ -187,15 +187,20 @@ class UIControls:
         # Create the components list, which will include everything for the NC
         components = []
         for card, values  in staged_components.items():
+            #  An exception for Insights as we need the entire table 
+            cName = 'd-flex flex-column'
+            if card == 'Insights':
+                cName = cName + ' p-0'
+            
             components.append(
                 dbc.Card(
                     className="mb-2",
                     children=[
                     dbc.CardHeader(card),
-                    dbc.CardBody(values) 
+                    dbc.CardBody(values, className=cName) 
                     ]
                 )   
-            )       
+            )
         return components
          
     

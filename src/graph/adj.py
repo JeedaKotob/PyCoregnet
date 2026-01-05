@@ -1,6 +1,10 @@
 from typing import Literal
 from itertools import combinations
 from components.backend import table
+import dash_ag_grid as dag
+import dash
+from dash import html
+import numpy as np
 
 
 def get_genes(grn_data : dict, role: str = Literal['bygene','bytf'],):
@@ -71,6 +75,8 @@ def options(genes):
 
 def by_update_info_panel(connections, selected_nodes, edges, threshold, columns):
 
+    data = []
+    partners = []
     for by in selected_nodes:
 
         target_count = len(connections[by])
@@ -83,16 +89,59 @@ def by_update_info_panel(connections, selected_nodes, edges, threshold, columns)
                     results.append(edge['data'])
         results = sorted(results, key=lambda x: x['shared_count'], reverse=True)
         
-        data = []
-        for co in results:
+        for i, co in enumerate(results):
             coreg = co['target'] if by == co['source'] else co['source']
-            data.append({"Node" : f"{by} {(target_count)}", "shared" : coreg, "count" : co['shared_count'] })
+            partners.append(coreg)
+            row = {"column1" : f"{by} ({(target_count)})", "column2" : coreg, "column3" : co['shared_count']}
+    
+            if i == 0:
+                row['rowSpan'] = len(results)
+            else:
+                row['rowSpan'] = 1
+            data.append(row)
+            
+    unique, counts = np.unique(partners, return_counts=True)
+    common_partners = list(set(unique[counts > 1].tolist()))
 
+    for row in data:
+        if row['column2'] in common_partners:
+            row['is_common'] = True
+            row['partner_tooltip'] = 'Shared'
+        else:
+            row['is_common'] = False
+            row['partner_tooltip'] = None
 
-    return table(
-        id="",
-        data=data,
-        columns=columns
+    
+
+    columnDefs = [
+        {
+            'field': 'column1',
+            **columns['column1'],
+            'rowSpan': {'function': 'params.data.rowSpan'},
+            'cellStyle': {'backgroundColor': 'white', 'display': 'flex', 'alignItems': 'center', 'border': '1px solid #ddd'}
+        },
+        {
+            'field': 'column2',
+            **columns['column2'],
+            'tooltipField': 'partner_tooltip',
+            'cellStyle': {
+                'styleConditions': [
+                    {'condition': 'params.data.is_common', 'style': {'backgroundColor': '#add8e6', 'textAlign': 'left'}}
+                ],
+                'defaultStyle': {'textAlign': 'left'}
+            }
+        },
+        {'field': 'column3',**columns['column3'], 'cellStyle': {'textAlign': 'right'}, 'width': 80, 'maxWidth': 80, 'suppressSizeToFit': True},
+    ]
+    
+    # return 
+    return dag.AgGrid(
+        id='',
+        columnDefs=columnDefs,
+        rowData=data,
+        columnSize='responsiveSizeToFit',
+        dashGridOptions = {'suppressRowTransform': True, 'tooltipShowDelay': 0}
     )
+
     
 

@@ -104,18 +104,17 @@ def tabs(id: str, options: list ):#, value: str):
         ]
     )
     
-# def tabs(id: str, options: list ):#, value: str):
-def tabs(id: str, options: list, value: str):
+# def tabs(id: str, options: list ):#, value: str): "display": "flex", "flex": "1"
+def tabs(id: str, options: list, value: str):    
     return dbc.Card([
             dbc.CardHeader([
                 dbc.Tabs(
                 id=id,
-                className="d-flex justify-content-evenly text-black border-0",
+                className="text-black border-0",
                 # active_tab=None,
                 children=[
                     dbc.Tab(
                         label=option['label'],
-                        # tab_id=option['tab_id'],
                         tab_id=valueId,
                         labelClassName='text-black border-0',
                         activeLabelClassName='text-black border-0 border-bottom border-primary border-3',
@@ -123,9 +122,9 @@ def tabs(id: str, options: list, value: str):
                     ) for option,valueId in zip(options,value)
                 ]
             )
-        ], style={"backgroundColor": "transparent"}),    
-        dbc.CardBody(id={"type": f"{id['type']}_content", "uid": id['uid']}, style={"backgroundColor": "transparent", "height": "50vh"}),
-    ], style={"backgroundColor": "transparent"}, className="d-flex flex-1")
+        ], className="bg-transparent" ),    
+        dbc.CardBody(id={"type": f"{id['type']}_content", "uid": id['uid']}, className="d-flex flex-column flex-grow-1 m-0 p-0" ),
+    ], className="d-flex flex-column flex-grow-1 bg-transparent border-0")
     
     
 

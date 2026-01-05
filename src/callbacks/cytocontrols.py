@@ -36,7 +36,6 @@ app = get_app()
     ],
     State({"type": "threshold_input", "uid": ALL}, "value"),
     State({"type": "store", "uid": MATCH}, "data"),
-    prevent_initial_call=True,
 )
 def sync(
     tapNodeData, dropdown_value, selection_mode, filter_mode, backtracking_mode, threshold_btn, threshold_value, store
@@ -376,7 +375,8 @@ def update_inspector_tabs(active_tab, store,___):
     if not selected:
         return html.Div(
             "Please select a node",
-            className="d-flex align-items-center justify-content-center h-100"
+            className="d-flex align-items-center justify-content-center",
+            style={"height": "400px"},
         )
 
     
@@ -396,12 +396,40 @@ def update_inspector_tabs(active_tab, store,___):
             raise NameError("Getting cache has failed")
         
         edges = [e.copy() for e in ___ if 'source' in e['data']]
-        columns=[
-            {"name": "TF", "id": "Node"},
-            {"name": "CO", "id": "shared"},
-            {"name": "STC", "id": "count"},
-        ]
 
+        if store['preprocess_role'] == 'bytf':
+            
+            columns = {
+                "column1" : {
+                    'headerName': 'TF (C) ⓘ',
+                    'headerTooltip': 'Transcription Factor (Count)',
+                },
+                "column2" : {
+                    'headerName': 'Coreg ⓘ', 
+                    'headerTooltip': 'Coregulator', 
+                },
+                "column3" : {
+                    'headerName': 'STC ⓘ', 'headerTooltip': 'Shared Target Count',
+                }
+            }
+            
+        else:
+            columns = {
+                "column1" : {
+                    'headerName': 'TG (C) ⓘ',
+                    'headerTooltip': 'Target Gene (Count)',
+                },
+                "column2" : {
+                    'headerName': 'TF ⓘ', 
+                    'headerTooltip': 'Transcription Factor', 
+                },
+                "column3" : {
+                    'headerName': 'STFC ⓘ', 'headerTooltip': 'Shared Transcription Factor Count',
+                }
+            }
+            
+
+        
         from graph.adj import by_update_info_panel
         
         # NOTE FULL CONNECTIONS OR CURRENT ?

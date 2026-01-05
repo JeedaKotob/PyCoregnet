@@ -83,7 +83,7 @@ def get_heat_map(genes,filepath):
         yaxis_title="Samples"
     
     )
-    return dcc.Graph(figure=heatmap)
+    return dcc.Graph(figure=heatmap,className='flex-1')
 
 
 
