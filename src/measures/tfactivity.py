@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from src.datahandler import GRNHandler
 from scipy.sparse import csr_matrix
+import torch
+import torch.nn as nn
 
 def prepare_data(num_exp_file: str = "CIT_BLCA_EXP.csv",grn_file:str="grn.json"):
     numerical_expression = pd.read_csv(num_exp_file, index_col=0)
@@ -46,9 +48,40 @@ def get_adj_matrix(bytf:dict,tg_index:dict,tf_index:dict):
     return adj_matrix
 
 
+# input: target genes exp -> hidden layer w latent space: tf activity -> output: target genes exp
+# latent space size=num of tfs
 
-# # test 
-# targets, tfs, targets_exp, tfs_exp, tg_index, tf_index, bytf=prepare_data()
-# adj_matrix=get_adj_matrix(bytf,tg_index,tf_index)
-# full_matrix = adj_matrix.toarray().astype(int) 
-# adj_df = pd.DataFrame(full_matrix, index=targets, columns=tfs).to_csv('adj.csv')
+# softmax, sigmoid (pos only)
+# hyperbolic tangent (neg and pos)
+
+
+
+
+
+class TfActivity(torch.nn.Module):
+    def __init__(self,n_targets,n_tfs, grn_mask):
+        super().__init__()
+
+        # Encoder: target gene exp->tf activity
+        self.encoder=nn.Linear(n_targets,n_tfs)
+        self.act=nn.Tanh() 
+
+        # Decoder: tf activity -> target gene exp
+        self.decoder=nn.Linear(n_tfs,n_targets)
+
+    def forward(self,x):
+        tf_act=self.act(self.encoder(x))
+        recon_exp=self.decoder(tf_act)
+        return recon_exp
+
+
+#
+targets, tfs, targets_exp, tfs_exp, tg_index, tf_index, bytf=prepare_data()
+adj_matrix=get_adj_matrix(bytf,tg_index,tf_index)
+print(adj_matrix)
+# full_matrix = adj_matrix.toarray().astype(int)
+# adj_df = pd.DataFrame(full_matrix, index=targets, columns=tfs)
+# print(len(bytf.get('EGR2').get('act')+bytf.get('EGR2').get('rep')))
+# check=(adj_df['EGR2']==1).sum()
+# print(check)
+
