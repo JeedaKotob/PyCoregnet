@@ -357,88 +357,88 @@ def update_network_stats(store,elements):
 
     
 
-@app.callback(
-    Output({"type": "inspector_tabs_content", "uid": MATCH}, "children"),
-    Input({"type": "inspector_tabs", "uid": MATCH}, "active_tab"),
-    Input({"type": "store", "uid": MATCH}, "data"),
-    State({"type": "network-graph", "uid": MATCH}, "elements"),
-    prevent_initial_call=True
-)
-def update_inspector_tabs(active_tab, store,___):
-    """Update inspector tabs based on active tab and store data"""
+# @app.callback(
+#     Output({"type": "inspector_tabs_content", "uid": MATCH}, "children"),
+#     Input({"type": "inspector_tabs", "uid": MATCH}, "active_tab"),
+#     Input({"type": "store", "uid": MATCH}, "data"),
+#     State({"type": "network-graph", "uid": MATCH}, "elements"),
+#     prevent_initial_call=True
+# )
+# def update_inspector_tabs(active_tab, store,___):
+#     """Update inspector tabs based on active tab and store data"""
 
-    if not active_tab:
-        return no_update
+#     if not active_tab:
+#         return no_update
     
-    selected = store.get("selected",None)
+#     selected = store.get("selected",None)
     
-    if not selected:
-        return html.Div(
-            "Please select a node",
-            className="d-flex align-items-center justify-content-center",
-            style={"height": "400px"},
-        )
+#     if not selected:
+#         return html.Div(
+#             "Please select a node",
+#             className="d-flex align-items-center justify-content-center",
+#             style={"height": "400px"},
+#         )
 
     
-    if active_tab == "table":
-        from graph.fullbipartite import regulation
-        return regulation(selected,"./grn.json")
-    elif active_tab == "heatmap":
-        from graph.fullbipartite import get_heat_map
-        return get_heat_map(selected,"./CIT_BLCA_EXP.csv")
-    elif active_tab == "adj_table":
-        from dash import get_app
-        app = get_app()
-        cache = app.server.config["SERVER_CACHE"]
-        pre_data = cache.get(store['uid'])
+#     if active_tab == "table":
+#         from graph.fullbipartite import regulation
+#         return regulation(selected,"./grn.json")
+#     elif active_tab == "heatmap":
+#         from graph.fullbipartite import get_heat_map
+#         return get_heat_map(selected,"./CIT_BLCA_EXP.csv")
+#     elif active_tab == "adj_table":
+#         from dash import get_app
+#         app = get_app()
+#         cache = app.server.config["SERVER_CACHE"]
+#         pre_data = cache.get(store['uid'])
         
-        if not pre_data:
-            raise NameError("Getting cache has failed")
+#         if not pre_data:
+#             raise NameError("Getting cache has failed")
         
-        edges = [e.copy() for e in ___ if 'source' in e['data']]
+#         edges = [e.copy() for e in ___ if 'source' in e['data']]
 
-        if store['preprocess_role'] == 'bytf':
+#         if store['preprocess_role'] == 'bytf':
             
-            columns = {
-                "column1" : {
-                    'headerName': 'TF (C) ⓘ',
-                    'headerTooltip': 'Transcription Factor (Count)',
-                },
-                "column2" : {
-                    'headerName': 'Coreg ⓘ', 
-                    'headerTooltip': 'Coregulator', 
-                },
-                "column3" : {
-                    'headerName': 'STC ⓘ', 'headerTooltip': 'Shared Target Count',
-                }
-            }
+#             columns = {
+#                 "column1" : {
+#                     'headerName': 'TF (C) ⓘ',
+#                     'headerTooltip': 'Transcription Factor (Count)',
+#                 },
+#                 "column2" : {
+#                     'headerName': 'Coreg ⓘ', 
+#                     'headerTooltip': 'Coregulator', 
+#                 },
+#                 "column3" : {
+#                     'headerName': 'STC ⓘ', 'headerTooltip': 'Shared Target Count',
+#                 }
+#             }
             
-        else:
-            columns = {
-                "column1" : {
-                    'headerName': 'TG (C) ⓘ',
-                    'headerTooltip': 'Target Gene (Count)',
-                },
-                "column2" : {
-                    'headerName': 'TF ⓘ', 
-                    'headerTooltip': 'Transcription Factor', 
-                },
-                "column3" : {
-                    'headerName': 'STFC ⓘ', 'headerTooltip': 'Shared Transcription Factor Count',
-                }
-            }
+#         else:
+#             columns = {
+#                 "column1" : {
+#                     'headerName': 'TG (C) ⓘ',
+#                     'headerTooltip': 'Target Gene (Count)',
+#                 },
+#                 "column2" : {
+#                     'headerName': 'TF ⓘ', 
+#                     'headerTooltip': 'Transcription Factor', 
+#                 },
+#                 "column3" : {
+#                     'headerName': 'STFC ⓘ', 'headerTooltip': 'Shared Transcription Factor Count',
+#                 }
+#             }
             
 
         
-        from graph.adj import by_update_info_panel
+#         from graph.adj import by_update_info_panel
         
-        # NOTE FULL CONNECTIONS OR CURRENT ?
-        return by_update_info_panel(pre_data,selected,edges,store['threshold'],columns)
+#         # NOTE FULL CONNECTIONS OR CURRENT ?
+#         return by_update_info_panel(pre_data,selected,edges,store['threshold'],columns)
     
 
 
 
-    return no_update
+#     return no_update
     
     
 

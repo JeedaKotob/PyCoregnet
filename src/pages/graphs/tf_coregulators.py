@@ -49,4 +49,4 @@ uilayout = UILayout(
     controls=uicontrols
 )
 
-layout = uilayout.render()
+layout = dash.html.Div()#uilayout.render()
