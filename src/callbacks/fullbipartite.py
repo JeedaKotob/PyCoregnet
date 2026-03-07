@@ -24,17 +24,16 @@ def update_inspector_tabs(active_tab, store, ___):
     if not active_tab:
         return no_update
 
-    selected = store.get("selected", None)
+    selected = store.get("selected", [])
 
     if active_tab == "table":
-        rowData = []
-
-        if not selected:
-            return html.Div("Please Select a Node", className="m-auto text-muted")
-        else:
+        if selected:
             from graph.fullbipartite import get_regulation
 
             rowData = get_regulation(selected, "./grn.json")
+        else:
+            rowData = []
+
         return dag.AgGrid(
             id={"type": "aggrid-table", "uid": "full"},
             columnDefs=[
@@ -83,6 +82,7 @@ def update_inspector_tabs(active_tab, store, ___):
             defaultColDef={"flex": 1},
             columnSize="sizeToFit",
             rowData=rowData,
+            style={"height": "100%"},
         )
 
     elif active_tab == "heatmap":
@@ -92,3 +92,26 @@ def update_inspector_tabs(active_tab, store, ___):
             return get_heat_map(selected, "./CIT_BLCA_EXP.csv")
         else:
             return html.Div("Please Select a Node", className="m-auto text-muted")
+
+
+@app.callback(
+    [
+        Output({"type": "main-content", "uid": "full"}, "children"),
+        Output({"type": "insights-card-body", "uid": "full"}, "children"),
+        Output({"type": "network-graph", "uid": "full"}, "tapNodeData"),
+    ],
+    Input({"type": "insights_switch_view_btn", "uid": "full"}, "n_clicks"),
+    State({"type": "main-content", "uid": "full"}, "children"),
+    State({"type": "insights-card-body", "uid": "full"}, "children"),
+    prevent_initial_call=True,
+)
+def switch_view(btn, main_content, insights_content):
+
+    if not isinstance(main_content, list):
+        main_content = [main_content]
+
+    if not isinstance(insights_content, list):
+        insights_content = [insights_content]
+
+    # Clear transient tap state so stale node taps are not replayed after swapping views.
+    return insights_content, main_content, None

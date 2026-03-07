@@ -98,7 +98,7 @@ fig.add_trace(heatmap, row=2, col=2)
 fig.update_layout(
     autosize=True,
     # margin=dict(l=0, r=0, t=0, b=0),
-    # margin=dict(l=20),
+    margin=dict(t=150),
     xaxis=dict(showticklabels=False),
     yaxis=dict(showticklabels=False),
     xaxis2=dict(showticklabels=False),

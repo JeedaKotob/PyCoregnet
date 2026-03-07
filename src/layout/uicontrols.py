@@ -6,11 +6,10 @@ from components.ui import (
     thresh_input,
     dropdown,
     tabs,
-    table,
-    get_heat_map,
     network_stats,
 )
 
+#  Network control options
 _NC_CONFIG = [
     {
         "card": "Network Stats",
@@ -19,7 +18,7 @@ _NC_CONFIG = [
         "parms": {},
     },
     {
-        "card": "Graph controls",
+        "card": "Graph Controls",
         "id": "selection_mode",
         "func": btn_grp,
         "parms": {
@@ -33,7 +32,7 @@ _NC_CONFIG = [
         },
     },
     {
-        "card": "Graph controls",
+        "card": "Graph Controls",
         "id": "filter_mode",
         "func": btn_grp,
         "parms": {
@@ -47,7 +46,7 @@ _NC_CONFIG = [
         },
     },
     {
-        "card": "Graph controls",
+        "card": "Graph Controls",
         "id": "backtracking_mode",
         "func": btn_grp,
         "parms": {
@@ -60,7 +59,7 @@ _NC_CONFIG = [
         },
     },
     {
-        "card": "Graph controls",
+        "card": "Graph Controls",
         "id": "threshold_input",
         "func": thresh_input,
         "parms": {
@@ -84,6 +83,40 @@ _NC_CONFIG = [
         },
     },
 ]
+
+_DEFAULT_CARD_CLASS = "d-flex flex-column"
+
+_CARD_CLASS_NAME = {
+    "Network Stats": _DEFAULT_CARD_CLASS,
+    "Graph Controls": _DEFAULT_CARD_CLASS,
+    "Node Inspector": _DEFAULT_CARD_CLASS,
+    "Insights": f"{_DEFAULT_CARD_CLASS} p-0 ",
+}
+
+_CARD_STYLE = {"Insights": {"height": "400px"}}
+
+
+def modify_card(self, card: str):
+    cardID = card.lower().replace(" ", "-")
+
+    if card == "Insights":
+        return cardID, dbc.Row(
+            [
+                dbc.Col("Insights", width="auto"),
+                dbc.Col(
+                    dbc.Button(
+                        "Switch View",
+                        id={"type": "insights_switch_view_btn", "uid": self.uid},
+                        size="sm",
+                    ),
+                    width="auto",
+                ),
+            ],
+            justify="between",
+            align="center",
+        )
+
+    return cardID, card
 
 
 class UIControls:
@@ -164,16 +197,25 @@ class UIControls:
         components = []
         for card, values in staged_components.items():
             #  An exception for Insights as we need the entire table
-            cName = "d-flex flex-column"
-            if card == "Insights":
-                cName = cName + " p-0"
+            className = _CARD_CLASS_NAME.get(card)
+            style = _CARD_STYLE.get(card, None)
+
+            cardId, card = modify_card(self, card)
 
             components.append(
                 dbc.Card(
                     className="mb-2",
+                    id={"type": f"{cardId}-card-container", "uid": self.uid},
                     children=[
-                        dbc.CardHeader(card),
-                        dbc.CardBody(values, className=cName),
+                        dbc.CardHeader(
+                            card, id={"type": f"{cardId}-card-header", "uid": self.uid}
+                        ),
+                        dbc.CardBody(
+                            values,
+                            className=className,
+                            id={"type": f"{cardId}-card-body", "uid": self.uid},
+                            style=style,
+                        ),
                     ],
                 )
             )
