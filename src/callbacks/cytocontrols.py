@@ -357,89 +357,24 @@ def update_network_stats(store,elements):
 
     
 
-# @app.callback(
-#     Output({"type": "inspector_tabs_content", "uid": MATCH}, "children"),
-#     Input({"type": "inspector_tabs", "uid": MATCH}, "active_tab"),
-#     Input({"type": "store", "uid": MATCH}, "data"),
-#     State({"type": "network-graph", "uid": MATCH}, "elements"),
-#     prevent_initial_call=True
-# )
-# def update_inspector_tabs(active_tab, store,___):
-#     """Update inspector tabs based on active tab and store data"""
+@app.callback(
+    [
+        Output({"type": "main-content", "uid": MATCH}, "children"),
+        Output({"type": "insights-card-body", "uid": MATCH}, "children"),
+        Output({"type": "network-graph", "uid": MATCH}, "tapNodeData"),
+    ],
+    Input({"type": "insights_switch_view_btn", "uid": MATCH}, "n_clicks"),
+    State({"type": "main-content", "uid": MATCH}, "children"),
+    State({"type": "insights-card-body", "uid": MATCH}, "children"),
+    prevent_initial_call=True,
+)
+def switch_view(btn, main_content, insights_content):
 
-#     if not active_tab:
-#         return no_update
-    
-#     selected = store.get("selected",None)
-    
-#     if not selected:
-#         return html.Div(
-#             "Please select a node",
-#             className="d-flex align-items-center justify-content-center",
-#             style={"height": "400px"},
-#         )
+    if not isinstance(main_content, list):
+        main_content = [main_content]
 
-    
-#     if active_tab == "table":
-#         from graph.fullbipartite import regulation
-#         return regulation(selected,"./grn.json")
-#     elif active_tab == "heatmap":
-#         from graph.fullbipartite import get_heat_map
-#         return get_heat_map(selected,"./CIT_BLCA_EXP.csv")
-#     elif active_tab == "adj_table":
-#         from dash import get_app
-#         app = get_app()
-#         cache = app.server.config["SERVER_CACHE"]
-#         pre_data = cache.get(store['uid'])
-        
-#         if not pre_data:
-#             raise NameError("Getting cache has failed")
-        
-#         edges = [e.copy() for e in ___ if 'source' in e['data']]
+    if not isinstance(insights_content, list):
+        insights_content = [insights_content]
 
-#         if store['preprocess_role'] == 'bytf':
-            
-#             columns = {
-#                 "column1" : {
-#                     'headerName': 'TF (C) ⓘ',
-#                     'headerTooltip': 'Transcription Factor (Count)',
-#                 },
-#                 "column2" : {
-#                     'headerName': 'Coreg ⓘ', 
-#                     'headerTooltip': 'Coregulator', 
-#                 },
-#                 "column3" : {
-#                     'headerName': 'STC ⓘ', 'headerTooltip': 'Shared Target Count',
-#                 }
-#             }
-            
-#         else:
-#             columns = {
-#                 "column1" : {
-#                     'headerName': 'TG (C) ⓘ',
-#                     'headerTooltip': 'Target Gene (Count)',
-#                 },
-#                 "column2" : {
-#                     'headerName': 'TF ⓘ', 
-#                     'headerTooltip': 'Transcription Factor', 
-#                 },
-#                 "column3" : {
-#                     'headerName': 'STFC ⓘ', 'headerTooltip': 'Shared Transcription Factor Count',
-#                 }
-#             }
-            
-
-        
-#         from graph.adj import by_update_info_panel
-        
-#         # NOTE FULL CONNECTIONS OR CURRENT ?
-#         return by_update_info_panel(pre_data,selected,edges,store['threshold'],columns)
-    
-
-
-
-#     return no_update
-    
-    
-
-
+    # Clear transient tap state so stale node taps are not replayed after swapping views.
+    return insights_content, main_content, None

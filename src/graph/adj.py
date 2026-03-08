@@ -145,3 +145,46 @@ def by_update_info_panel(connections, selected_nodes, edges, threshold, columns)
 
     
 
+
+def get_byregulation_data(connections, selected_nodes, edges, threshold):
+
+    data = []
+    partners = []
+    for by in selected_nodes:
+        target_count = len(connections[by])
+        results = []
+        for edge in edges:
+            if edge["data"]["shared_count"] >= threshold:
+                src = edge["data"]["source"]
+                tgt = edge["data"]["target"]
+                if by == src or by == tgt:
+                    results.append(edge["data"])
+        results = sorted(results, key=lambda x: x["shared_count"], reverse=True)
+
+        for i, co in enumerate(results):
+            coreg = co["target"] if by == co["source"] else co["source"]
+            partners.append(coreg)
+            row = {
+                "column1": f"{by} ({(target_count)})",
+                "column2": coreg,
+                "column3": co["shared_count"],
+            }
+
+            if i == 0:
+                row["rowSpan"] = len(results)
+            else:
+                row["rowSpan"] = 1
+            data.append(row)
+
+    unique, counts = np.unique(partners, return_counts=True)
+    common_partners = list(set(unique[counts > 1].tolist()))
+
+    for row in data:
+        if row["column2"] in common_partners:
+            row["is_common"] = True
+            row["partner_tooltip"] = "Shared"
+        else:
+            row["is_common"] = False
+            row["partner_tooltip"] = None
+
+    return data

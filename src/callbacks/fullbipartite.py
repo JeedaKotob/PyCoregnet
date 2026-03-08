@@ -37,7 +37,28 @@ def update_inspector_tabs(active_tab, store, ___):
         return dag.AgGrid(
             id={"type": "aggrid-table", "uid": "full"},
             columnDefs=[
-                {"headerName": "Selected Node", "field": "Source"},
+                {
+                    "headerName": "Selected Node",
+                    "field": "Source",
+                    "cellStyle": {
+                        "styleConditions": [
+                            {
+                                "condition": "params.data.partner_label == 'Target'",
+                                "style": {
+                                    "backgroundColor": "#FFFFE0",
+                                    "fontWeight": "bold",
+                                },
+                            },
+                            {
+                                "condition": "params.data.partner_label == 'TF'",
+                                "style": {
+                                    "backgroundColor": "#ADD8E6",
+                                    "fontWeight": "bold",
+                                },
+                            },
+                        ]
+                    },
+                },
                 {
                     "headerName": "Partner",
                     "field": "Partner",
@@ -94,24 +115,24 @@ def update_inspector_tabs(active_tab, store, ___):
             return html.Div("Please Select a Node", className="m-auto text-muted")
 
 
-@app.callback(
-    [
-        Output({"type": "main-content", "uid": "full"}, "children"),
-        Output({"type": "insights-card-body", "uid": "full"}, "children"),
-        Output({"type": "network-graph", "uid": "full"}, "tapNodeData"),
-    ],
-    Input({"type": "insights_switch_view_btn", "uid": "full"}, "n_clicks"),
-    State({"type": "main-content", "uid": "full"}, "children"),
-    State({"type": "insights-card-body", "uid": "full"}, "children"),
-    prevent_initial_call=True,
-)
-def switch_view(btn, main_content, insights_content):
+# @app.callback(
+#     [
+#         Output({"type": "main-content", "uid": "full"}, "children"),
+#         Output({"type": "insights-card-body", "uid": "full"}, "children"),
+#         Output({"type": "network-graph", "uid": "full"}, "tapNodeData"),
+#     ],
+#     Input({"type": "insights_switch_view_btn", "uid": "full"}, "n_clicks"),
+#     State({"type": "main-content", "uid": "full"}, "children"),
+#     State({"type": "insights-card-body", "uid": "full"}, "children"),
+#     prevent_initial_call=True,
+# )
+# def switch_view(btn, main_content, insights_content):
 
-    if not isinstance(main_content, list):
-        main_content = [main_content]
+#     if not isinstance(main_content, list):
+#         main_content = [main_content]
 
-    if not isinstance(insights_content, list):
-        insights_content = [insights_content]
+#     if not isinstance(insights_content, list):
+#         insights_content = [insights_content]
 
-    # Clear transient tap state so stale node taps are not replayed after swapping views.
-    return insights_content, main_content, None
+#     # Clear transient tap state so stale node taps are not replayed after swapping views.
+#     return insights_content, main_content, None
