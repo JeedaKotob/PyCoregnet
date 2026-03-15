@@ -73,7 +73,8 @@ full_network_stylesheet = [
     {
         "selector": ".faded",
         "style": {
-            'opacity': 0.04,
+            'opacity': 0.1,
+            'line-color': '#cccccc'
         }
     },
 
