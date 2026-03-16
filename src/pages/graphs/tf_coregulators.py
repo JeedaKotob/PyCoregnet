@@ -30,6 +30,7 @@ uicontrols = UIControls(
     inspector_tabs=[
         {"label": "Regulation", "tab_id": "table"},
         {"label": "TF Activity", "tab_id": "nn"},
+        {"label": "GOE", "tab_id": "GO"},
     ],
     network_stats=True,
 )
