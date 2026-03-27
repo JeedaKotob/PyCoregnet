@@ -1,15 +1,14 @@
-import json
+# Data loading is now centralized in services.data_loader
+# Import from there instead of defining locally
+from services import load_grn
 
-def load_grn_data(filepath):
-    try:
-        with open(filepath, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Data file '{filepath}' not found.")
-        return None
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from '{filepath}'.")
-        return None
+# Legacy compatibility - grn is loaded on-demand
+grn = None
 
 
-grn = load_grn_data("./grn.json")
+def get_grn():
+    """Get GRN data, loading on first call."""
+    global grn
+    if grn is None:
+        grn = load_grn()
+    return grn

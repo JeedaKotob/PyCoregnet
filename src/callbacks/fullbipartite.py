@@ -30,7 +30,7 @@ def update_inspector_tabs(active_tab, store, ___):
         if selected:
             from graph.fullbipartite import get_regulation
 
-            rowData = get_regulation(selected, "./grn.json")
+            rowData = get_regulation(selected)
         else:
             rowData = []
 
@@ -110,7 +110,7 @@ def update_inspector_tabs(active_tab, store, ___):
         if selected:
             from graph.fullbipartite import get_heat_map
 
-            return get_heat_map(selected, "./CIT_BLCA_EXP.csv")
+            return get_heat_map(selected)
         else:
             return html.Div("Please Select a Node", className="m-auto text-muted")
 

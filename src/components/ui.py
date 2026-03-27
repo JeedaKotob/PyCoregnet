@@ -1,6 +1,8 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import html, dcc, dash_table
+import plotly.graph_objects as go
+from services import load_expression_matrix
 
 
 def btn_grp(id: str, label: str, options: list, value: str):
@@ -187,11 +189,9 @@ def network_stats(id: str):
 # id={"type": "selected_edges", "uid": id}
 
 
-def get_heat_map(genes, filepath):
-    import pandas as pd
-    import plotly.graph_objects as go
-
-    ne = pd.read_csv(filepath, index_col=0)
+def get_heat_map(genes):
+    """Generate heatmap for selected genes using centralized data loader."""
+    ne = load_expression_matrix()
     if isinstance(genes, str):
         genes = [genes]
 

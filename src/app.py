@@ -12,19 +12,15 @@ import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 from flask_caching import Cache
 from components.navbar import get_navbar
+from config.app_config import CACHE_CONFIG
+from config.ui_config import APP_STYLE
 
 cyto.load_extra_layouts()
 
 server = Flask(__name__)
 
-# Local-friendly cache (persists between runs). For Redis, swap config.
-config = {
-    "DEBUG": True,  # some Flask specific configs
-    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
-    "CACHE_DEFAULT_TIMEOUT": 3600,
-}
 # tell Flask to use the above defined config
-server.config.from_mapping(config)
+server.config.from_mapping(CACHE_CONFIG)
 cache = Cache(server)
 server.config["SERVER_CACHE"] = cache
 
@@ -37,14 +33,6 @@ app = dash.Dash(
     url_base_pathname="/",
 )
 
-# Responsible to make a desktop-app like structure
-APP_STYLE = {
-    "height": "100vh",
-    "display": "flex",
-    "flexDirection": "column",
-    "padding": "0",
-    "backgroundColor": "#f8f9fa",
-}
 
 navbar = get_navbar(dash.page_registry.values())
 
