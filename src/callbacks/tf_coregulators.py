@@ -166,15 +166,14 @@ def run_enrichment_analysis(n_clicks, organism, gene_set, store):
         #     outdir=None,
         # )
         enr = gp.enrichr(
-            gene_list=['TGFB1I1'],
-            gene_sets=['GO_Biological_Process_2023'],
-            organism='human',
+            gene_list=["TGFB1I1"],
+            gene_sets=["GO_Biological_Process_2023"],
+            organism="human",
             outdir=None,
         )
         if enr.results.empty:
             return html.Div("No enrichment results found."), False
-        
-        
+
         print(enr.results)
 
         top = enr.results[["Term", "Adjusted P-value"]].head(10)
