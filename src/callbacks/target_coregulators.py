@@ -2,10 +2,14 @@ from dash import (
     Input,
     Output,
     State,
+    ctx,
+    no_update,
     get_app,
 )
 import dash_ag_grid as dag
 from graph.adj import get_byregulation_data
+from analysis.enrichment import Enrichment
+import callbacks.enrichment  # noqa: F401
 
 app = get_app()
 
@@ -88,3 +92,12 @@ def update_inspector_tabs(active_tab, store, ___):
                 },
             ],
         )
+
+    elif active_tab == "enrichment":
+        # Avoid rebuilding GO UI when only the store updates (e.g., graph selection changes).
+        if (
+            isinstance(ctx.triggered_id, dict)
+            and ctx.triggered_id.get("type") == "store"
+        ):
+            return no_update
+        return Enrichment(uid=store["uid"]).unpack()

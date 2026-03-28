@@ -28,6 +28,7 @@ uicontrols = UIControls(
     options_dropdown=True,
     inspector_tabs=[
         {"label": "Regulation", "tab_id": "table"},
+        {"label": "GOE", "tab_id": "enrichment"},
         {"label": "GRN", "tab_id": "grn"},
     ],
     network_stats=True,

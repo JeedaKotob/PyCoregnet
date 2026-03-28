@@ -1,13 +1,8 @@
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 
 
-class GOEWrapper:
+class Enrichment:
     "Gene Ontology Enrichment"
 
     def __init__(self, uid):
