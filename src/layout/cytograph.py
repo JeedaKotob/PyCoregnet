@@ -12,6 +12,7 @@ import dash_bootstrap_components as dbc
 from typing import Literal
 import dash_cytoscape as cyto
 from services import load_grn
+from config.ui_config import _CYTOGRAPH_STYLE, _CYTOGRAPH_CLASS_NAME
 
 cyto.load_extra_layouts()
 
@@ -113,17 +114,12 @@ class CytoGraph:
         return [
             cyto.Cytoscape(
                 id={"type": "network-graph", "uid": self.uid},
-                style={
-                    "flex-grow": "1",
-                    "box-sizing": "border-box",
-                    "border-radius": "8px",
-                    "box-shadow": "0 4px 6px rgba(0, 0, 0, 0.1)",
-                },
+                style=_CYTOGRAPH_STYLE,
                 minZoom=0.1,
                 maxZoom=2,
                 elements=self.elements,
                 stylesheet=self.stylesheet,
                 layout=self.layout_config,
-                className="bg-light",
+                className=_CYTOGRAPH_CLASS_NAME,
             )
         ]

@@ -8,6 +8,12 @@ from components.ui import (
     tabs,
     network_stats,
 )
+from config.ui_config import (
+    _CARD_BODY_CLASS_NAME,
+    _CARD_CLASS_NAME,
+    _CARD_HEADER_CLASS_NAME,
+    _CARD_STYLE,
+)
 
 #  Network control options
 _NC_CONFIG = [
@@ -83,17 +89,6 @@ _NC_CONFIG = [
         },
     },
 ]
-
-_DEFAULT_CARD_CLASS = "d-flex flex-column"
-
-_CARD_CLASS_NAME = {
-    "Network Stats": _DEFAULT_CARD_CLASS,
-    "Graph Controls": _DEFAULT_CARD_CLASS,
-    "Node Inspector": _DEFAULT_CARD_CLASS,
-    "Insights": f"{_DEFAULT_CARD_CLASS} p-0 ",
-}
-
-_CARD_STYLE = {"Insights": {"height": "400px"}}
 
 
 def modify_card(self, card: str):
@@ -197,22 +192,26 @@ class UIControls:
         components = []
         for card, values in staged_components.items():
             #  An exception for Insights as we need the entire table
-            className = _CARD_CLASS_NAME.get(card)
+            card_class_name = _CARD_CLASS_NAME
+            card_header_class_name = _CARD_HEADER_CLASS_NAME
+            card_body_class_name = _CARD_BODY_CLASS_NAME.get(card)
             style = _CARD_STYLE.get(card, None)
 
             cardId, card = modify_card(self, card)
 
             components.append(
                 dbc.Card(
-                    className="mb-2",
+                    className=card_class_name,
                     id={"type": f"{cardId}-card-container", "uid": self.uid},
                     children=[
                         dbc.CardHeader(
-                            card, id={"type": f"{cardId}-card-header", "uid": self.uid}
+                            card,
+                            className=card_header_class_name,
+                            id={"type": f"{cardId}-card-header", "uid": self.uid},
                         ),
                         dbc.CardBody(
                             values,
-                            className=className,
+                            className=card_body_class_name,
                             id={"type": f"{cardId}-card-body", "uid": self.uid},
                             style=style,
                         ),

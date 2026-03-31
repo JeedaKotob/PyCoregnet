@@ -1,22 +1,12 @@
-from typing import Literal
-import dash
-from dash import (
-    html,
-    Input,
-    Output,
-    State,
-    callback,
-    dcc,
-    no_update,
-    callback_context,
-    ctx,
-    MATCH,
-    ALL,
-    Patch,
-    get_app,
-)
+from dash import dcc
 import dash_bootstrap_components as dbc
 from layout import CytoGraph, UIControls
+from config.ui_config import (
+    _UILAYOUT_CONTAINER_CLASS_NAME,
+    _UILAYOUT_ROW_CLASS_NAME,
+    _UILAYOUT_MAIN_CONTENT_CLASS_NAME,
+    _UILAYOUT_SIDEBAR_CLASS_NAME,
+)
 
 # NOTE NEEDS TO BE REPLACED
 import utils
@@ -59,26 +49,26 @@ class UILayout:
     def render(self):
         return dbc.Container(
             fluid=True,
-            className="p-0 m-0 h-100",
+            className=_UILAYOUT_CONTAINER_CLASS_NAME,
             children=[
                 dcc.Store(id={"type": "store", "uid": self.uid}, data=self.store),
                 dcc.Store(
                     id={"type": "backup-store", "uid": self.uid}, data=self.store
                 ),
                 dbc.Row(
-                    className="g-0 h-100",  # g-0 removes gutters, h-100 for full height
+                    className=_UILAYOUT_ROW_CLASS_NAME,  # g-0 removes gutters, h-100 for full height
                     children=[
                         # Main content area
                         dbc.Col(
                             id={"type": "main-content", "uid": self.uid},
                             width=self.content_width,
-                            className=" d-flex flex-column overflow-hidden p-2 bg-secondary",
+                            className=_UILAYOUT_MAIN_CONTENT_CLASS_NAME,
                             children=self.CONTENT.unpack(),
                         ),
                         # Sidebar area
                         dbc.Col(
                             width=self.controls_width,
-                            className="bg-secondary text-white p-3 h-100 overflow-auto",
+                            className=_UILAYOUT_SIDEBAR_CLASS_NAME,
                             children=self.CONTROLS.unpack(),
                         ),
                     ],

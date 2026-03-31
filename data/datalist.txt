@@ -1,0 +1,5 @@
+CIT_BLCA_EXP.csv # Numerical Expression data
+grn.json # Gene Regulatory Network
+CIT_BLCA_CNV.csv # alterationData
+CIT_BLCA_Subgroup.csv # clinicalData
+CITinf.csv # TFA regulatorInfluence (Dummy for now)
