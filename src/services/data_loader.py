@@ -11,7 +11,13 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
-from config.paths import GRN_FILE, NE_FILE
+from config.paths import (
+    ALTERATION_FILE,
+    CLINICAL_FILE,
+    GRN_FILE,
+    INFLUENCE_FILE,
+    NE_FILE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +75,31 @@ class DataValidator:
         logger.info(
             f"Expression matrix validated: {df.shape[0]} genes × {df.shape[1]} samples"
         )
+
+    @staticmethod
+    def validate_non_empty_dataframe(df: pd.DataFrame, data_name: str) -> None:
+        """Validate that a DataFrame contains rows and columns."""
+        if df.empty:
+            raise DataLoadError(f"{data_name} is empty")
+
+        logger.info(
+            f"{data_name} validated: {df.shape[0]} rows × {df.shape[1]} columns"
+        )
+
+    @staticmethod
+    def validate_numeric_dataframe(df: pd.DataFrame, data_name: str) -> None:
+        """Validate that all DataFrame columns are numeric."""
+        DataValidator.validate_non_empty_dataframe(df, data_name)
+
+        non_numeric_cols = [
+            str(col) for col in df.columns if not pd.api.types.is_numeric_dtype(df[col])
+        ]
+        if non_numeric_cols:
+            sample = ", ".join(non_numeric_cols[:5])
+            raise DataLoadError(
+                f"{data_name} must contain numeric values only. "
+                f"Non-numeric columns include: {sample}"
+            )
 
 
 class DataLoader:
@@ -190,6 +221,51 @@ class DataLoader:
         except Exception as e:
             raise DataLoadError(f"Unexpected error loading expression: {e}")
 
+    def load_alterationData(
+        self, file_path: Optional[str] = None, index_col: int = 0
+    ) -> pd.DataFrame:
+        """Load and validate alteration data matrix."""
+        path_str = str(file_path or ALTERATION_FILE)
+
+        try:
+            df = self._load_expression_impl(path_str, index_col)
+            self.validator.validate_numeric_dataframe(df, "Alteration data")
+            return df
+        except DataLoadError:
+            raise
+        except Exception as e:
+            raise DataLoadError(f"Unexpected error loading alteration data: {e}")
+
+    def load_clinicalData(
+        self, file_path: Optional[str] = None, index_col: int = 0
+    ) -> pd.DataFrame:
+        """Load and validate clinical data table."""
+        path_str = str(file_path or CLINICAL_FILE)
+
+        try:
+            df = self._load_expression_impl(path_str, index_col)
+            self.validator.validate_non_empty_dataframe(df, "Clinical data")
+            return df
+        except DataLoadError:
+            raise
+        except Exception as e:
+            raise DataLoadError(f"Unexpected error loading clinical data: {e}")
+
+    def load_influence(
+        self, file_path: Optional[str] = None, index_col: int = 0
+    ) -> pd.DataFrame:
+        """Load and validate regulator influence matrix."""
+        path_str = str(file_path or INFLUENCE_FILE)
+
+        try:
+            df = self._load_expression_impl(path_str, index_col)
+            self.validator.validate_numeric_dataframe(df, "Regulator influence data")
+            return df
+        except DataLoadError:
+            raise
+        except Exception as e:
+            raise DataLoadError(f"Unexpected error loading influence data: {e}")
+
     def clear_cache(self) -> None:
         """Clear the LRU cache. Useful for reloading data after changes."""
         if self.cache_enabled:
@@ -238,6 +314,25 @@ def load_expression_matrix(
         Expression DataFrame
     """
     return _loader.load_expression(file_path, index_col)
+
+
+def load_alterationData(
+    file_path: Optional[str] = None, index_col: int = 0
+) -> pd.DataFrame:
+    """Convenience function to load alterationData."""
+    return _loader.load_alterationData(file_path, index_col)
+
+
+def load_clinicalData(
+    file_path: Optional[str] = None, index_col: int = 0
+) -> pd.DataFrame:
+    """Convenience function to load clinicalData."""
+    return _loader.load_clinicalData(file_path, index_col)
+
+
+def load_influence(file_path: Optional[str] = None, index_col: int = 0) -> pd.DataFrame:
+    """Convenience function to load regulator influence data."""
+    return _loader.load_influence(file_path, index_col)
 
 
 def clear_data_cache() -> None:

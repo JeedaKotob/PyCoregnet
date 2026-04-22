@@ -1,2 +1,5 @@
-GRN_FILE = './data/grn.json'
-NE_FILE = './data/CIT_BLCA_EXP.csv'
+GRN_FILE = "./data/grn.json"
+NE_FILE = "./data/CIT_BLCA_EXP.csv"
+ALTERATION_FILE = "./data/CIT_BLCA_CNV.csv"
+CLINICAL_FILE = "./data/CIT_BLCA_Subgroup.csv"
+INFLUENCE_FILE = "./data/CITinf.csv"
