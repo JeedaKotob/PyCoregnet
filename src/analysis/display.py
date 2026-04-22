@@ -7,7 +7,7 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-from coregs import get_coregs
+from analysis.coregs import get_coregs
 from joblib import Memory
 
 with open("./data/grn.json", "r") as f:

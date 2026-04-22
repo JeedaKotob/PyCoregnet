@@ -31,6 +31,7 @@ uicontrols = UIControls(
         {"label": "Regulation", "tab_id": "table"},
         {"label": "TF Activity", "tab_id": "nn"},
         {"label": "GOE", "tab_id": "enrichment"},
+        {"label": "Heatmaps", "tab_id": "hms"},
     ],
     network_stats=True,
 )

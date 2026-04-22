@@ -1,4 +1,4 @@
-from dash import Input, Output, State, ctx, get_app, no_update
+from dash import Input, Output, State, ctx, get_app, no_update,dcc,html
 import dash_ag_grid as dag
 from graph.adj import get_byregulation_data
 from analysis.enrichment import Enrichment
@@ -94,3 +94,22 @@ def update_inspector_tabs(active_tab, store, ___):
         ):
             return no_update
         return Enrichment(uid=store["uid"]).unpack()
+    
+    elif active_tab == "hms":
+        print("adsasd")
+        from analysis.hm import get_hm_fig
+        
+        if len(selected) != 0:
+            if len(selected) > 1:
+                selected = selected[0]
+            
+            
+            fig = get_hm_fig(selected)
+            
+            return html.Div(
+                    children=dcc.Graph(
+                        figure=fig,
+                        style={"flex": "1"},
+                        responsive=True,
+                    ),
+                )

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from plotly.subplots import make_subplots
 
-from coregs import get_coregs
+from analysis.coregs import get_coregs
 from joblib import Memory
 
 with open("./data/grn.json", "r") as f:
@@ -331,3 +331,43 @@ if __name__ == "__main__":
     fig.update_yaxes(showgrid=False, zeroline=False)
 
     fig.show(renderer="browser")
+
+
+def get_hm_fig(selected): 
+    tf_activity, alteration_data, clinical_data, samples_class = heatmap_prep(
+        GRN=grn,
+        numerical_exp=CIT_BLCA_EXP,
+        tf_activity=CITinf,
+        alteration_data=CIT_BLCA_CNV,
+        clinical_data=CIT_BLCA_Subgroup,
+    )
+
+    maps = heatplot(
+        GRN=grn,
+        selected=selected,
+        tf_activity=tf_activity,
+        numerical_exp=CIT_BLCA_EXP,
+        alteration_data=alteration_data,
+        samples_class=samples_class,
+    )
+
+    fig = go.Figure()
+    for hm in maps:
+        fig.add_trace(hm)
+
+    # Render all tracks as one visual body with shared pan/zoom interactions.
+    fig.update_layout(
+        dragmode="pan",
+        margin=dict(t=0, b=0, l=0, r=0),
+        yaxis=dict(
+            type="linear",
+            range=[-0.5, 2.5],
+            tickmode="array",
+            tickvals=[2, 1, 0],
+            ticktext=["Clinical", "Copy Number", "Influence"],
+        ),
+    )
+    fig.update_xaxes(showgrid=False, zeroline=False)
+    fig.update_yaxes(showgrid=False, zeroline=False)
+    
+    return fig

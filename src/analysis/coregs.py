@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 import pandas as pd
 import numpy as np
 
-from patterns import FrequentItemsets
+from analysis.patterns import FrequentItemsets
 import json
 
 
