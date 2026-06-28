@@ -1,5 +1,4 @@
 from dash import Input, Output, State, MATCH, get_app, html
-import gseapy as gp
 
 app = get_app()
 
@@ -27,6 +26,7 @@ def update_gene_sets_by_organism(organism):
         return [], True
 
     try:
+        import gseapy as gp
         names = gp.get_library_name(organism=organism)
     except Exception:
         return [], True
@@ -70,6 +70,7 @@ def run_enrichment_analysis(_n_clicks, organism, gene_set, store):
     gene_sets = [gene_set] if isinstance(gene_set, str) else gene_set
 
     try:
+        import gseapy as gp
         enr = gp.enrichr(
             gene_list=selected,
             gene_sets=gene_sets,

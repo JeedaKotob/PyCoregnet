@@ -11,11 +11,12 @@ class Enrichment:
     def unpack(self):
         return dbc.Container(
             fluid=True,
-            className="p-0",
+            className="p-0 d-flex flex-column flex-grow-1",
             children=[
                 dbc.Card(
+                    className="flex-grow-1",
                     children=dbc.CardBody(
-                        className="p-3",
+                        className="p-3 d-flex flex-column",
                         children=[
                             html.Div(
                                 "GO Input",
@@ -90,13 +91,16 @@ class Enrichment:
                                 color="success",
                                 className="w-100 mt-2 fw-semibold border-0",
                             ),
-                            dcc.Loading(
-                                type="default",
-                                color="#2f6b57",
-                                children=html.Div(
-                                    id={"type": "goe-results", "uid": self.uid},
-                                    className="border rounded p-3 mt-2",
-                                    children="Results will appear here.",
+                            html.Div(
+                                className="border rounded p-3 mt-2 flex-grow-1",
+                                style={"overflow-y": "auto", "min-height": "0"},
+                                children=dcc.Loading(
+                                    type="default",
+                                    color="#2f6b57",
+                                    children=html.Div(
+                                        id={"type": "goe-results", "uid": self.uid},
+                                        children="Results will appear here.",
+                                    ),
                                 ),
                             ),
                         ],

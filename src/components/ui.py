@@ -131,7 +131,7 @@ def tabs(id: str, options: list):
             dbc.CardBody(
                 id={"type": f"{id['type']}_content", "uid": id["uid"]},
                 className="d-flex flex-column flex-grow-1 m-0 p-0",
-                style={"min-height": "400px"},
+                style={"min-height": "0", "overflow": "hidden"},
             ),
         ],
         className="d-flex flex-column flex-grow-1 bg-transparent border-0",

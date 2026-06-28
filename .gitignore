@@ -9,6 +9,15 @@ __pycache__/
 # Mac os 
 .DS_Store
 
+# vscode
+.vscode
+
+#uv
+.tool-versions
+
+#claude
+.claude
+
 # Distribution / packaging
 .Python
 build/

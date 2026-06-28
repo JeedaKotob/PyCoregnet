@@ -107,9 +107,10 @@ def update_inspector_tabs(active_tab, store, ___):
             fig = get_hm_fig(selected)
             
             return html.Div(
-                    children=dcc.Graph(
-                        figure=fig,
-                        style={"flex": "1"},
-                        responsive=True,
-                    ),
-                )
+                children=dcc.Graph(
+                    figure=fig,
+                    style={"height": "100%"},
+                    responsive=True,
+                ),
+                style={"height": "100%", "display": "flex", "flexDirection": "column"},
+            )

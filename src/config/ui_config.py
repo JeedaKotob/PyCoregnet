@@ -22,7 +22,8 @@ _CARD_BODY_CLASS_NAME = {
 
 _CARD_STYLE = {
     "Insights": {
-        "height": "400px",
+        "height": "70vh",
+        "overflow": "hidden",
     }
 }
 
