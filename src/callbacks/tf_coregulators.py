@@ -95,16 +95,17 @@ def update_inspector_tabs(active_tab, store, ___):
             return no_update
         return Enrichment(uid=store["uid"]).unpack()
     
-    elif active_tab == "hms":
+    elif active_tab == "hms" and False:
         print("adsasd")
         from analysis.hm import get_hm_fig
+        from analysis.heatmaps import sm
         
         if len(selected) != 0:
             if len(selected) > 1:
                 selected = selected[0]
             
             
-            fig = get_hm_fig(selected)
+            fig = sm.tf_plot(selected)
             
             return html.Div(
                 children=dcc.Graph(
@@ -114,3 +115,70 @@ def update_inspector_tabs(active_tab, store, ___):
                 ),
                 style={"height": "100%", "display": "flex", "flexDirection": "column"},
             )
+            
+    elif active_tab == 'hms':
+        
+        if len(selected) != 0:
+            if len(selected) > 0:
+                selected = selected[0]
+        
+            from analysis.heatmaps import SpecificMutation
+            import plotly.graph_objects as go
+            from services import (
+                load_grn,
+                load_expression_matrix,
+                load_alterationData,
+                load_clinicalData,
+                load_influence,
+            )
+
+            GRN = load_grn()
+            CIT_BLCA_EXP = load_expression_matrix()
+            CIT_BLCA_Subgroup = load_clinicalData()
+            CIT_BLCA_CNV = load_alterationData()
+            CITinf = load_influence()
+
+            CIT_BLCA_Subgroup.columns = [0]  # TODO update data
+
+            sm = SpecificMutation(
+                GRN=GRN,
+                numerical_exp=CIT_BLCA_EXP,
+                tf_activity=CITinf,
+                alteration_data=CIT_BLCA_CNV,
+                clinical_data=CIT_BLCA_Subgroup,
+            )
+            
+            maps = sm.tf_plot(selected)
+            if maps is None:
+                return html.Div()
+            
+            fig = go.Figure()
+            for hm in maps:
+                fig.add_trace(hm)
+
+            # Render all tracks as one visual body with shared pan/zoom interactions.
+            fig.update_layout(
+                dragmode="pan",
+                margin=dict(t=0, b=0, l=0, r=0),
+                yaxis=dict(
+                    type="linear",
+                    range=[-0.5, 2.5],
+                    tickmode="array",
+                    tickvals=[2, 1, 0],
+                    ticktext=["Clinical", "Copy Number", "Influence"],
+                ),
+            )
+            fig.update_xaxes(showgrid=False, zeroline=False)
+            fig.update_yaxes(showgrid=False, zeroline=False)
+                    
+                    
+            return html.Div(
+                children=dcc.Graph(
+                    figure=fig,
+                    style={"height": "100%"},
+                    responsive=True,
+                ),
+                style={"height": "100%", "display": "flex", "flexDirection": "column"},
+            )
+            
+            
