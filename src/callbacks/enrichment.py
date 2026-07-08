@@ -1,6 +1,20 @@
 from dash import Input, Output, State, MATCH, get_app, html
+import dash_ag_grid as dag
 
 app = get_app()
+
+
+@app.callback(
+    Output({"type": "goe-input-section", "uid": MATCH}, "className"),
+    Output({"type": "goe-collapse-toggle", "uid": MATCH}, "children"),
+    Input({"type": "goe-collapse-toggle", "uid": MATCH}, "n_clicks"),
+    State({"type": "goe-input-section", "uid": MATCH}, "className"),
+    prevent_initial_call=True,
+)
+def toggle_goe_input_section(_n_clicks, className):
+    if className and "d-none" in className:
+        return "p-2", "Expand"
+    return "d-none", "Collapse"
 
 
 @app.callback(
@@ -49,6 +63,16 @@ def disable_run_button_while_loading(_n_clicks):
 
 
 @app.callback(
+    Output({"type": "goe-input-section", "uid": MATCH}, "className", allow_duplicate=True),
+    Output({"type": "goe-collapse-toggle", "uid": MATCH}, "children", allow_duplicate=True),
+    Input({"type": "goe-run-analysis", "uid": MATCH}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def collapse_input_on_run(_n_clicks):
+    return "d-none", "Expand"
+
+
+@app.callback(
     Output({"type": "goe-results", "uid": MATCH}, "children"),
     Output({"type": "goe-run-analysis", "uid": MATCH}, "disabled"),
     Input({"type": "goe-run-analysis", "uid": MATCH}, "n_clicks"),
@@ -80,13 +104,40 @@ def run_enrichment_analysis(_n_clicks, organism, gene_set, store):
         if enr.results.empty:
             return html.Div("No enrichment results found."), False
 
-        top = enr.results[["Term", "Adjusted P-value"]].head(10)
+        table = enr.results.drop(
+            columns=["Old P-value", "Old Adjusted P-value"], errors="ignore"
+        )
+
+        column_min_widths = {
+            "Gene_set": 140,
+            "Term": 220,
+            "Overlap": 90,
+            "P-value": 110,
+            "Adjusted P-value": 130,
+            "Odds Ratio": 110,
+            "Combined Score": 130,
+            "Genes": 220,
+        }
+
         return (
-            html.Ul(
-                [
-                    html.Li(f"{row['Term']} (adj p={row['Adjusted P-value']:.3g})")
-                    for _, row in top.iterrows()
-                ]
+            dag.AgGrid(
+                rowData=table.to_dict("records"),
+                columnDefs=[
+                    {"field": col, "minWidth": column_min_widths.get(col, 120)}
+                    for col in table.columns
+                ],
+                style={"height": "100%", "width": "100%"},
+                dashGridOptions={
+                    "domLayout": "normal",
+                    "pagination": True,
+                    "paginationPageSize": 10,
+                },
+                defaultColDef={
+                    "resizable": True,
+                    "sortable": True,
+                    "filter": True,
+                    "flex": 1,
+                },
             ),
             False,
         )
