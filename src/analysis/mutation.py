@@ -1,6 +1,7 @@
 """To Best Understand this module, start with SpecificMutation class"""
 
 import math
+from typing import ClassVar
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -62,8 +63,10 @@ def _process_subgroups(clinical_data: pd.Series, tf_activity: pd.DataFrame):
             common_samples = clinical_data.index.intersection(tf_activity.columns)
             samples_class = clinical_data.loc[common_samples]
 
-        # Converts subgroups into categories
-        samples_class = samples_class[0].astype("category").cat.codes
+        # Converts subgroups into categories, keeping the label order for the legend
+        categorical = samples_class[0].astype("category")
+        categories = categorical.cat.categories.tolist()
+        samples_class = categorical.cat.codes
         samples_class.replace(-1, pd.NA, inplace=True)  # ?????
 
         # Add a new subgroup "all" that will have the tfs in tf activity
@@ -77,16 +80,39 @@ def _process_subgroups(clinical_data: pd.Series, tf_activity: pd.DataFrame):
             tf_activity.columns, columns=["all"]
         )  # TODO REVIEW
         samples_class = None
+        categories = None
 
-    return clinical_data, samples_class
+    return clinical_data, samples_class, categories
 
 
 class SpecificMutation:
+    # Standard copy-number call levels, with a professional diverging (loss -> gain) palette
+    CNV_LEVELS: ClassVar[list[tuple[int, str, str]]] = [
+        (-2, "Deep Deletion", "#0B3C74"),
+        (-1, "Loss", "#6FA8DC"),
+        (0, "Neutral", "#F2F2F2"),
+        (1, "Gain", "#F4A582"),
+        (2, "Amplification", "#B2182B"),
+    ]
+
+    # Muted, colorblind-friendly qualitative palette for clinical subgroups
+    CLINICAL_PALETTE: ClassVar[list[str]] = [
+        "#4C72B0",
+        "#DD8452",
+        "#55A868",
+        "#C44E52",
+        "#8172B2",
+        "#937860",
+        "#DA8BC3",
+        "#8C8C8C",
+    ]
+
     coregs: np.ndarray
     n_exp: pd.DataFrame
     tf_activity: pd.DataFrame
     alteration_data: pd.DataFrame | None
     clinical_data: pd.DataFrame
+    clinical_categories: list | None
 
     def __init__(
         self,
@@ -119,9 +145,10 @@ class SpecificMutation:
             self.alteration_data, _ = alteration_data.align(tf_activity, join="inner")
             # TODO Should remove if>? #nx, ny = alteration_data.shape # if nx < 6 | ny < 10:
 
+        self.clinical_categories = None
         if not clinical_data.empty:
-            self.clinical_data, self.samples_class = _process_subgroups(
-                clinical_data, self.tf_activity
+            self.clinical_data, self.samples_class, self.clinical_categories = (
+                _process_subgroups(clinical_data, self.tf_activity)
             )
 
         # Above is preprocessing
@@ -141,6 +168,21 @@ class SpecificMutation:
             stepped_colorscale.append([right, color])
         return stepped_colorscale
 
+    @staticmethod
+    def _colorbar(title: str, y: float, yanchor: str) -> dict:
+        """A compact, right-hand colorbar aligned to a single track's row band."""
+        return {
+            "title": {"text": title, "font": {"size": 10}},
+            "thickness": 10,
+            "len": 0.22,
+            "y": y,
+            "yanchor": yanchor,
+            "x": 1.02,
+            "xanchor": "left",
+            "outlinewidth": 0,
+            "tickfont": {"size": 9},
+        }
+
     def _create_expression_trace(
         self,
         selected: list,
@@ -148,6 +190,7 @@ class SpecificMutation:
         x_vals,
         y: list,
         transpose: bool = False,
+        colorbar: dict | None = None,
     ) -> go.Heatmap:
         """Create expression heatmap trace."""
         selected_exp = self.n_exp.loc[selected, selected_activity.columns]
@@ -167,18 +210,30 @@ class SpecificMutation:
             y=y,
             zmin=zmin,
             zmax=zmax,
-            colorscale=[[0, "red"], [0.5, "black"], [1, "green"]],
-            showscale=False,
+            colorscale=[[0, "#B2182B"], [0.5, "#1A1A1A"], [1, "#1B7837"]],
+            showscale=colorbar is not None,
+            colorbar=colorbar,
             xgap=0,
             ygap=0,
             hoverongaps=False,
         )
 
     def _create_samples_class_trace(self, x_vals, y: list) -> go.Heatmap:
-        """Create samples class heatmap trace."""
+        """Create samples class heatmap trace, colored by clinical subgroup."""
         samples_class = self.samples_class.loc[x_vals]
+
+        n_categories = len(self.clinical_categories) if self.clinical_categories else 1
+        colors = self.CLINICAL_PALETTE[:n_categories]
+        breaks = [i - 0.5 for i in range(n_categories + 1)]
+        stepped_colorscale = self._create_stepped_colorscale(
+            breaks, colors, breaks[0], breaks[-1]
+        )
+
         return go.Heatmap(
             z=np.atleast_2d(samples_class.to_numpy(dtype=float)),
+            colorscale=stepped_colorscale,
+            zmin=breaks[0],
+            zmax=breaks[-1],
             showscale=False,
             x=x_vals,
             y=y,
@@ -194,7 +249,7 @@ class SpecificMutation:
         y: list,
         transpose: bool = False,
     ) -> go.Heatmap:
-        """Create alteration data heatmap trace."""
+        """Create alteration data heatmap trace, colored by copy-number call."""
         tf_cna = self.alteration_data.loc[
             selected_activity.index, selected_activity.columns
         ]
@@ -203,8 +258,18 @@ class SpecificMutation:
         if transpose:
             z_values = z_values.T
 
+        levels = [level for level, _, _ in self.CNV_LEVELS]
+        colors = [color for _, _, color in self.CNV_LEVELS]
+        breaks = [levels[0] - 0.5] + [level + 0.5 for level in levels]
+        stepped_colorscale = self._create_stepped_colorscale(
+            breaks, colors, breaks[0], breaks[-1]
+        )
+
         return go.Heatmap(
             z=z_values,
+            colorscale=stepped_colorscale,
+            zmin=breaks[0],
+            zmax=breaks[-1],
             showscale=False,
             x=x_vals,
             y=y,
@@ -214,7 +279,12 @@ class SpecificMutation:
         )
 
     def _create_tf_activity_trace(
-        self, selected: list, selected_activity: pd.DataFrame, x_vals, y: list
+        self,
+        selected: list,
+        selected_activity: pd.DataFrame,
+        x_vals,
+        y: list,
+        colorbar: dict | None = None,
     ) -> go.Heatmap:
         """Create TF activity heatmap trace with stepped colorscale."""
         tf_a = selected_activity.loc[selected, selected_activity.columns].astype(float)
@@ -240,7 +310,8 @@ class SpecificMutation:
             colorscale=stepped_colorscale,
             zmin=tf_min,
             zmax=tf_max,
-            showscale=False,
+            showscale=colorbar is not None,
+            colorbar=colorbar,
             x=x_vals,
             y=y,
             xgap=0,
@@ -285,6 +356,7 @@ class SpecificMutation:
                     selected_activity=selected_activity,
                     x_vals=selected_activity.columns,
                     y=[3],
+                    colorbar=self._colorbar("Expression", y=1.0, yanchor="top"),
                 )
             )
 
@@ -315,10 +387,20 @@ class SpecificMutation:
                     selected_activity=selected_activity,
                     x_vals=selected_activity.columns,
                     y=[0],
+                    colorbar=self._colorbar("TF Activity", y=0.0, yanchor="bottom"),
                 )
             )
 
         return fig
+
+    def get_legend_entries(self) -> list[tuple[str, str]]:
+        """(label, color) pairs for the categorical tracks (Clinical subgroup, Copy Number)."""
+        entries = []
+        if self.clinical_categories:
+            entries.extend(zip(self.clinical_categories, self.CLINICAL_PALETTE))
+        if self.alteration_data is not None:
+            entries.extend((label, color) for _, label, color in self.CNV_LEVELS)
+        return entries
 
     def get_graph(self, selected: list):
         """Create and return heatmap traces for the selected transcription factors."""
@@ -342,17 +424,19 @@ class SpecificMutation:
             )
             fig.update_layout(
                 dragmode="pan",
-                margin={"t": 0, "b": 0, "l": 0, "r": 0},
+                autosize=True,
+                margin={"t": 15, "b": 50, "l": 100, "r": 110},
                 yaxis={
                     "type": "linear",
                     "range": [-0.5, 3.5],
                     "tickmode": "array",
                     "tickvals": [3, 2, 1, 0],
                     "ticktext": ["Expression", "Clinical", "Copy Number", "Influence"],
+                    "automargin": True,
                 },
             )
-            fig.update_xaxes(showgrid=False, zeroline=False)
-            fig.update_yaxes(showgrid=False, zeroline=False)
+            fig.update_xaxes(showgrid=False, zeroline=False, automargin=True)
+            fig.update_yaxes(showgrid=False, zeroline=False, automargin=True)
 
         else:
             fig = make_subplots(

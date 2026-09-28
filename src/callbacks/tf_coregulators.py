@@ -2,7 +2,7 @@ from dash import Input, Output, State, ctx, get_app, no_update, dcc, html
 import dash_ag_grid as dag
 from graph.adj import get_byregulation_data
 from analysis.enrichment import Enrichment
-from components.legend import legend_text, table_legend
+from components.legend import legend_item, legend_text, table_legend
 import callbacks.enrichment  # noqa: F401
 
 app = get_app()
@@ -112,9 +112,8 @@ def update_inspector_tabs(active_tab, store, ___):
     elif active_tab == "hms":
         assert isinstance(selected, list)
 
-        # Check list not empty
         if not selected:
-            return no_update
+            return html.Div("Please select a node", className="m-auto text-muted")
 
         from analysis.mutation import SpecificMutation
         from services import (
@@ -143,11 +142,28 @@ def update_inspector_tabs(active_tab, store, ___):
 
         fig = sm.get_graph(selected=selected)
 
+        if fig is None:
+            return html.Div(
+                "Selected node has no TF activity data",
+                className="m-auto text-muted",
+            )
+
+        legend_entries = sm.get_legend_entries()
+        legend = (
+            table_legend(*[legend_item(color, label) for label, color in legend_entries])
+            if legend_entries
+            else None
+        )
+
         return html.Div(
-            children=dcc.Graph(
-                figure=fig,
-                style={"height": "100%"},
-                responsive=True,
-            ),
-            style={"height": "100%", "display": "flex", "flexDirection": "column"},
+            className="d-flex flex-column",
+            style={"height": "100%", "minHeight": "0"},
+            children=[c for c in [legend] if c is not None]
+            + [
+                dcc.Graph(
+                    figure=fig,
+                    style={"flex": "1 1 auto", "minHeight": "0"},
+                    responsive=True,
+                )
+            ],
         )

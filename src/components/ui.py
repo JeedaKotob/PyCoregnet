@@ -128,10 +128,17 @@ def tabs(id: str, options: list):
                 ],
                 className="bg-white ",
             ),
-            dbc.CardBody(
-                id={"type": f"{id['type']}_content", "uid": id["uid"]},
-                className="d-flex flex-column flex-grow-1 m-0 p-0",
-                style={"min-height": "0", "overflow": "hidden"},
+            dcc.Loading(
+                dbc.CardBody(
+                    id={"type": f"{id['type']}_content", "uid": id["uid"]},
+                    className="d-flex flex-column flex-grow-1 m-0 p-0",
+                    style={"min-height": "0", "overflow": "hidden"},
+                ),
+                type="circle",
+                color="#0d6efd",
+                delay_show=300,
+                parent_className="d-flex flex-column flex-grow-1",
+                parent_style={"minHeight": "0", "overflow": "hidden"},
             ),
         ],
         className="d-flex flex-column flex-grow-1 bg-transparent border-0",
