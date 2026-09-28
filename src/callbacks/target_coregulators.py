@@ -3,12 +3,14 @@ from dash import (
     Output,
     State,
     ctx,
+    html,
     no_update,
     get_app,
 )
 import dash_ag_grid as dag
 from graph.adj import get_byregulation_data
 from analysis.enrichment import Enrichment
+from components.legend import legend_text, table_legend
 import callbacks.enrichment  # noqa: F401
 
 app = get_app()
@@ -47,13 +49,18 @@ def update_inspector_tabs(active_tab, store, ___):
         else:
             rowData = []
 
-        return dag.AgGrid(
+        grid = dag.AgGrid(
             rowData=rowData,
             columnSize="responsiveSizeToFit",
+            className="compact-pagination",
             dashGridOptions={
                 "suppressHorizontalScroll": True,
+                "pagination": True,
+                "paginationPageSize": 10,
+                "paginationPageSizeSelector": False,
+                "localeText": {"page": "", "to": "-", "of": "/"},
             },
-            style={"height": "100%"},
+            style={"flex": "1 1 auto", "minHeight": "0"},
             defaultColDef={
                 "resizable": True,
                 "sortable": True,
@@ -91,6 +98,14 @@ def update_inspector_tabs(active_tab, store, ___):
                     "headerTooltip": "Shared Transcription Factor Count",
                 },
             ],
+        )
+
+        legend = table_legend(legend_text("Common coregulator", "#0052CC"))
+
+        return html.Div(
+            className="d-flex flex-column",
+            style={"height": "100%", "minHeight": "0"},
+            children=[legend, grid],
         )
 
     elif active_tab == "enrichment":

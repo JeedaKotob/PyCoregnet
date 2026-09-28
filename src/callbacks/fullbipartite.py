@@ -7,6 +7,7 @@ from dash import (
     get_app,
 )
 import dash_ag_grid as dag
+from components.legend import legend_item, legend_text, table_legend
 
 app = get_app()
 
@@ -34,7 +35,7 @@ def update_inspector_tabs(active_tab, store, ___):
         else:
             rowData = []
 
-        return dag.AgGrid(
+        grid = dag.AgGrid(
             id={"type": "aggrid-table", "uid": "full"},
             columnDefs=[
                 {
@@ -103,7 +104,28 @@ def update_inspector_tabs(active_tab, store, ___):
             defaultColDef={"flex": 1},
             columnSize="sizeToFit",
             rowData=rowData,
-            style={"height": "100%"},
+            style={"flex": "1 1 auto", "minHeight": "0"},
+            className="compact-pagination",
+            dashGridOptions={
+                "pagination": True,
+                "paginationPageSize": 10,
+                "paginationPageSizeSelector": False,
+                "localeText": {"page": "", "to": "-", "of": "/"},
+            },
+        )
+
+        legend = table_legend(
+            legend_item("#FFFFE0", "Target"),
+            legend_item("#ADD8E6", "TF"),
+            legend_item("#D1E7DD", "Positive"),
+            legend_item("#F8D7DA", "Negative"),
+            legend_text("Shared partner", "#084298"),
+        )
+
+        return html.Div(
+            className="d-flex flex-column",
+            style={"height": "100%", "minHeight": "0"},
+            children=[legend, grid],
         )
 
     elif active_tab == "heatmap":

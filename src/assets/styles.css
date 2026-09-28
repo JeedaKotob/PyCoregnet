@@ -114,3 +114,23 @@ dash_daq==0.6.0
 .tabs-black .nav-link:hover {
     border: 1px solid #000;
 }
+
+/* Compact AG Grid pagination bar: keep it on one line at any width */
+.compact-pagination .ag-paging-panel {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+    font-size: 0.8rem;
+    overflow: hidden;
+}
+
+.compact-pagination .ag-paging-row-summary-panel,
+.compact-pagination .ag-paging-page-summary-panel {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.compact-pagination .ag-paging-page-size {
+    display: none;
+}
