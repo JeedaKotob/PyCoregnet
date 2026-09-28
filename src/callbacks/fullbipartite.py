@@ -7,7 +7,7 @@ from dash import (
     get_app,
 )
 import dash_ag_grid as dag
-from components.legend import legend_item, legend_text, table_legend
+from components.legend import legend_text, table_legend
 
 app = get_app()
 
@@ -46,14 +46,14 @@ def update_inspector_tabs(active_tab, store, ___):
                             {
                                 "condition": "params.data.partner_label == 'Target'",
                                 "style": {
-                                    "backgroundColor": "#FFFFE0",
+                                    "color": "#B8860B",
                                     "fontWeight": "bold",
                                 },
                             },
                             {
                                 "condition": "params.data.partner_label == 'TF'",
                                 "style": {
-                                    "backgroundColor": "#ADD8E6",
+                                    "color": "#2166AC",
                                     "fontWeight": "bold",
                                 },
                             },
@@ -66,34 +66,23 @@ def update_inspector_tabs(active_tab, store, ___):
                     "cellStyle": {
                         "styleConditions": [
                             {
-                                "condition": "params.data.shared == 'true' && params.data.Regulation == 'Positive'",
+                                "condition": "params.data.shared == 'true'",
                                 "style": {
-                                    "backgroundColor": "#D1E7DD",
-                                    "color": "#084298",
-                                    "fontWeight": "bold",
-                                },
-                            },
-                            {
-                                "condition": "params.data.shared == 'true' && params.data.Regulation == 'Negative'",
-                                "style": {
-                                    "backgroundColor": "#F8D7DA",
-                                    "color": "#084298",
+                                    "color": "#6A51A3",
                                     "fontWeight": "bold",
                                 },
                             },
                             {
                                 "condition": "params.data.Regulation == 'Positive'",
                                 "style": {
-                                    "backgroundColor": "#D1E7DD",
-                                    "color": "#0f5132",
+                                    "color": "#1B7837",
                                     "fontWeight": "bold",
                                 },
                             },
                             {
                                 "condition": "params.data.Regulation == 'Negative'",
                                 "style": {
-                                    "backgroundColor": "#F8D7DA",
-                                    "color": "#842029",
+                                    "color": "#B2182B",
                                     "fontWeight": "bold",
                                 },
                             },
@@ -115,11 +104,11 @@ def update_inspector_tabs(active_tab, store, ___):
         )
 
         legend = table_legend(
-            legend_item("#FFFFE0", "Target"),
-            legend_item("#ADD8E6", "TF"),
-            legend_item("#D1E7DD", "Positive"),
-            legend_item("#F8D7DA", "Negative"),
-            legend_text("Shared partner", "#084298"),
+            legend_text("Target", "#B8860B"),
+            legend_text("TF", "#2166AC"),
+            legend_text("Positive", "#1B7837"),
+            legend_text("Negative", "#B2182B"),
+            legend_text("Shared partner", "#6A51A3"),
         )
 
         return html.Div(
