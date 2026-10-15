@@ -23,10 +23,6 @@ class Enrichment:
                                 id={"type": "goe-input-section", "uid": self.uid},
                                 className="p-3",
                                 children=[
-                                    html.Div(
-                                        "GO Input",
-                                        className="text-uppercase fw-semibold small mb-1",
-                                    ),
                                     html.H5(
                                         "Gene Ontology Enrichment",
                                         className="mb-1 fw-semibold",
@@ -71,20 +67,16 @@ class Enrichment:
                                                         "Gene Sets",
                                                         className="small fw-semibold mb-2",
                                                     ),
-                                                    dcc.Loading(
-                                                        type="default",
-                                                        color="#2f6b57",
-                                                        children=dcc.Dropdown(
-                                                            id={
-                                                                "type": "goe-dropdown-gene-sets",
-                                                                "uid": self.uid,
-                                                            },
-                                                            className="mb-0",
-                                                            placeholder="Select an organism to load gene sets",
-                                                            disabled=True,
-                                                            maxHeight=220,
-                                                            multi=True,
-                                                        ),
+                                                    dcc.Dropdown(
+                                                        id={
+                                                            "type": "goe-dropdown-gene-sets",
+                                                            "uid": self.uid,
+                                                        },
+                                                        className="mb-0",
+                                                        placeholder="Select an organism to load gene sets",
+                                                        disabled=True,
+                                                        maxHeight=220,
+                                                        multi=True,
                                                     ),
                                                 ],
                                             ),
@@ -102,41 +94,9 @@ class Enrichment:
                                 ],
                             ),
                             html.Div(
-                                className="d-flex px-3 justify-content-between align-items-center mt-2",
-                                children=[
-                                    html.Div(
-                                        "Results",
-                                        className="text-uppercase fw-semibold small",
-                                    ),
-                                    dbc.Button(
-                                        "Expand",
-                                        id={
-                                            "type": "goe-collapse-toggle",
-                                            "uid": self.uid,
-                                        },
-                                        size="sm",
-                                        color="link",
-                                        className="p-0 text-decoration-none",
-                                    ),
-                                ],
-                            ),
-                            html.Div(
-                                className="border rounded p-0 mt-1 flex-grow-1 d-flex flex-column",
+                                id={"type": "goe-results", "uid": self.uid},
+                                className="flex-grow-1 d-flex flex-column",
                                 style={"min-height": "0"},
-                                children=dcc.Loading(
-                                    type="default",
-                                    color="#2f6b57",
-                                    parent_className="flex-grow-1 d-flex flex-column",
-                                    parent_style={"min-height": "0"},
-                                    className="flex-grow-1 d-flex flex-column",
-                                    style={"min-height": "0"},
-                                    children=html.Div(
-                                        id={"type": "goe-results", "uid": self.uid},
-                                        className="flex-grow-1 d-flex flex-column",
-                                        style={"min-height": "0"},
-                                        children="Results will appear here.",
-                                    ),
-                                ),
                             ),
                         ],
                     ),
