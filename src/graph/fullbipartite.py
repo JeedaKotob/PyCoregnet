@@ -1,10 +1,9 @@
-import dash
-from dash import dcc, dash_table
 import random
+
 import plotly.graph_objects as go
-import pandas as pd
-from components.backend import table
-from services import load_grn, load_expression_matrix
+from dash import dcc
+
+from services import load_expression_matrix, load_grn
 
 
 def create_network(grn_data):

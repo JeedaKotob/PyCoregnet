@@ -1,18 +1,15 @@
-from dash import dcc
 import dash_bootstrap_components as dbc
-from layout import CytoGraph, UIControls
-from config.ui_config import (
-    _UILAYOUT_CONTAINER_CLASS_NAME,
-    _UILAYOUT_ROW_CLASS_NAME,
-    _UILAYOUT_MAIN_CONTENT_CLASS_NAME,
-    _UILAYOUT_SIDEBAR_CLASS_NAME,
-)
-
-# NOTE NEEDS TO BE REPLACED
-import utils
+from dash import dcc
 
 # Run the callbacks
-import callbacks.callbacks
+import callbacks.callbacks  # noqa: F401  (registers callbacks)
+from config.ui_config import (
+    _UILAYOUT_CONTAINER_CLASS_NAME,
+    _UILAYOUT_MAIN_CONTENT_CLASS_NAME,
+    _UILAYOUT_ROW_CLASS_NAME,
+    _UILAYOUT_SIDEBAR_CLASS_NAME,
+)
+from layout import CytoGraph, UIControls
 
 
 class UILayout:

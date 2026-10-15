@@ -1,15 +1,11 @@
 import dash
 import dash_bootstrap_components as dbc
-
-import pandas as pd
 import numpy as np
-
 import plotly.graph_objects as go
 from plotly.figure_factory._dendrogram import _Dendrogram
 from plotly.subplots import make_subplots
 
 from services import load_expression_matrix
-
 
 dash.register_page(__name__, path="/heatmap")
 

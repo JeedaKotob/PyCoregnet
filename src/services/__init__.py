@@ -2,24 +2,20 @@
 
 from .data_loader import (
     DataLoader,
-    load_grn,
-    load_expression_matrix,
+    DataLoadError,
     load_alterationData,
     load_clinicalData,
+    load_expression_matrix,
+    load_grn,
     load_influence,
-    clear_data_cache,
-    get_loader,
-    DataLoadError,
 )
 
 __all__ = [
+    "DataLoadError",
     "DataLoader",
-    "load_grn",
-    "load_expression_matrix",
     "load_alterationData",
     "load_clinicalData",
+    "load_expression_matrix",
+    "load_grn",
     "load_influence",
-    "clear_data_cache",
-    "get_loader",
-    "DataLoadError",
 ]

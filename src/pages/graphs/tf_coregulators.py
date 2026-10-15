@@ -1,11 +1,10 @@
 import dash
-import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
-from assets import stylesheet
-from layout import UIControls, CytoGraph, UILayout
 
+import callbacks.tf_coregulators  # noqa: F401  (registers callbacks)
+from assets import stylesheet
 from graph import adj  # NOTE UPDATE
-import callbacks.tf_coregulators
+from layout import CytoGraph, UIControls, UILayout
 
 dash.register_page(__name__, path="/graphs/TFCoregulators")
 

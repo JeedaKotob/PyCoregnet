@@ -7,12 +7,13 @@ CytoGraph
     - The class obj will have all metadata aswell all data for the specific graph
 """
 
-import dash
-import dash_bootstrap_components as dbc
 from typing import Literal
+
+import dash
 import dash_cytoscape as cyto
+
+from config.ui_config import _CYTOGRAPH_CLASS_NAME, _CYTOGRAPH_STYLE
 from services import load_grn
-from config.ui_config import _CYTOGRAPH_STYLE, _CYTOGRAPH_CLASS_NAME
 
 cyto.load_extra_layouts()
 
